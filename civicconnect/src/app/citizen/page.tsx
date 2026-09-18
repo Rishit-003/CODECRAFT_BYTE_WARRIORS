@@ -39,27 +39,20 @@ export default function CitizenDashboard() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-          Welcome back, <span className="gradient-text">{user.name.split(' ')[0]}</span> 👋
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Here&apos;s what&apos;s happening in your community
-        </p>
+      {/* Primary action comes before summary data */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--color-accent-blue)]">Resident workspace</p>
+          <h1 className="text-3xl font-bold mt-2" style={{ fontFamily: 'var(--font-display)' }}>
+            Good to see you, {user.name.split(' ')[0]}.
+          </h1>
+          <p className="text-sm text-[var(--color-text-secondary)] mt-2">Report a new issue or check the progress of an existing one.</p>
+        </div>
+        <Link href="/citizen/report" className="btn-primary shrink-0"><PlusCircle size={17} /> Report an issue</Link>
       </div>
 
-      {/* Quick Action Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">
-        <Link href="/citizen/report" className="glass-card p-5 flex items-center gap-4 group">
-          <div className="stat-card-icon" style={{ background: 'rgba(59,130,246,0.15)', color: 'var(--color-accent-blue)' }}>
-            <PlusCircle size={22} />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Report Issue</p>
-            <p className="text-xs text-[var(--color-text-muted)]">Submit a new report</p>
-          </div>
-        </Link>
+      {/* Status summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
         <div className="glass-card-static p-5 flex items-center gap-4">
           <div className="stat-card-icon" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-accent-amber)' }}>

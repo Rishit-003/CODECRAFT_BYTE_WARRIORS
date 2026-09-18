@@ -102,14 +102,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
-        <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid var(--color-border-glass)' }}>
+        <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm" style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}>
-              🏙️
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: '#e4f0eb', color: '#173b36' }}>
+              CC
             </div>
             <div>
-              <span className="font-bold text-sm" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span>
-              <div className="badge text-[10px] mt-0.5" style={{ background: `${roleColor}20`, color: roleColor, padding: '1px 8px' }}>
+              <span className="font-bold text-base text-white" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span>
+              <div className="text-[10px] mt-0.5 uppercase tracking-[0.12em] text-[#b8ccc4]">
                 {ROLE_LABELS[user.role]}
               </div>
             </div>
@@ -142,11 +142,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user.name}</p>
-              <p className="text-xs text-[var(--color-text-muted)] truncate">{user.email}</p>
+              <p className="text-sm font-medium truncate text-white">{user.name}</p>
+              <p className="text-xs text-[#b8ccc4] truncate">{user.email}</p>
             </div>
           </div>
-          <button onClick={handleLogout} className="sidebar-link w-full text-[var(--color-accent-red)] hover:bg-red-500/10">
+          <button onClick={handleLogout} className="sidebar-link w-full text-[#f0bab4] hover:bg-white/10">
             <LogOut size={18} /> Sign Out
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className="md:ml-[260px]">
         {/* Top Bar */}
-        <header className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between" style={{ background: 'rgba(10, 14, 39, 0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid var(--color-border-glass)' }}>
+        <header className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between" style={{ background: 'rgba(247,248,244,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--color-border-glass)' }}>
           <button onClick={() => setSidebarOpen(true)} className="md:hidden text-[var(--color-text-secondary)]">
             <Menu size={24} />
           </button>
@@ -182,7 +182,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-5 md:p-8 max-w-[1440px]">
           {children}
         </main>
       </div>
