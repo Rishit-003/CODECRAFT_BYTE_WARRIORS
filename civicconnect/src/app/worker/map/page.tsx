@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Issue, WorkerUser } from '@/types';
 import { CATEGORY_CONFIG, URGENCY_CONFIG, STATUS_CONFIG } from '@/constants';
 import { MapPin, Navigation } from 'lucide-react';
+import Link from 'next/link';
 
 export default function WorkerMapPage() {
   const { user } = useAuth();
@@ -79,19 +80,18 @@ export default function WorkerMapPage() {
         </div>
       </div>
 
-      {/* Task List Below Map */}
-      <div className="space-y-2">
-        {tasks.filter(t => t.status !== 'resolved').map((task) => (
-          <div key={task.id} className="glass-card-static p-3 rounded-xl flex items-center gap-3" style={{ borderLeft: `3px solid ${URGENCY_CONFIG[task.urgency].color}` }}>
+      <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {tasks.filter(t => !['resolved', 'closed', 'admin_review'].includes(t.status)).map((task) => (
+          <Link href={`/worker/issues/${task.id}`} key={task.id} className="glass-card-static p-3 rounded-xl flex items-center gap-3 hover:bg-white/5 transition-colors" style={{ borderLeft: `3px solid ${URGENCY_CONFIG[task.urgency]?.color || 'gray'}` }}>
             <span className="text-xl">{CATEGORY_CONFIG[task.category]?.icon}</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{task.title}</p>
-              <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1"><MapPin size={10} /> {task.location.address}</p>
+              <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 truncate"><MapPin size={10} className="shrink-0"/> {task.location.address}</p>
             </div>
-            <span className="badge text-[10px]" style={{ background: STATUS_CONFIG[task.status].bgColor, color: STATUS_CONFIG[task.status].color }}>
-              {STATUS_CONFIG[task.status].label}
+            <span className="badge text-[10px] shrink-0" style={{ background: STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.bgColor, color: STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.color }}>
+              {STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.label || task.status}
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

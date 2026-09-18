@@ -113,6 +113,12 @@ export interface Issue {
   reopenedReason?: string;
   upvotes: string[]; // Array of User IDs
   upvoteCount: number;
+  inspectionStartedAt?: string;
+  inspectionObservations?: string;
+  inspectionRemarks?: string;
+  inspectionPhoto?: string;
+  workStartedAt?: string;
+  workPerformed?: string;
   resolutionPhoto?: string;
   resolutionNotes?: string;
   resolvedAt?: string;

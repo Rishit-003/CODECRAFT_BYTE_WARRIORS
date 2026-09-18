@@ -11,7 +11,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard, FileText, MapPin, PlusCircle,
   ClipboardList, Users, BarChart3,
-  LogOut, Bell, Menu, X, ChevronRight,
+  LogOut, Bell, Menu, X, ChevronRight, User,
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -29,8 +29,11 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Community Map', href: '/citizen/map', icon: <MapPin size={20} /> },
   ],
   worker: [
-    { label: 'My Tasks', href: '/worker', icon: <ClipboardList size={20} /> },
-    { label: 'Task Map', href: '/worker/map', icon: <MapPin size={20} /> },
+    { label: 'Dashboard', href: '/worker', icon: <LayoutDashboard size={20} /> },
+    { label: 'My Complaints', href: '/worker/issues', icon: <ClipboardList size={20} /> },
+    { label: 'Map', href: '/worker/map', icon: <MapPin size={20} /> },
+    { label: 'Notifications', href: '/worker/notifications', icon: <Bell size={20} /> },
+    { label: 'Profile', href: '/worker/profile', icon: <User size={20} /> },
   ],
   admin: [
     { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={20} /> },
