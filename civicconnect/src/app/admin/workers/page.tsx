@@ -49,11 +49,11 @@ export default function AdminWorkersPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-          Worker <span className="gradient-text">Management</span>
+        <h1 className="text-2xl font-bold font-display">
+          Field <span className="gradient-text">Inspectors</span>
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          {workers.length} total workers • {activeCount} active
+          {workers.length} total inspectors • {activeCount} active
         </p>
       </div>
 
@@ -138,6 +138,7 @@ export default function AdminWorkersPage() {
                     <span className="text-xs text-[var(--color-text-muted)]">{worker.designation}</span>
                   </div>
                   <p className="text-xs text-[var(--color-text-muted)]">📍 {worker.assignedZone}</p>
+                  <p className="text-xs text-[var(--color-text-muted)]">📞 {worker.contactNumber || 'N/A'}</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--color-border-glass)' }}>

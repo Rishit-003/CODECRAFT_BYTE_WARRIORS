@@ -33,10 +33,12 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Task Map', href: '/worker/map', icon: <MapPin size={20} /> },
   ],
   admin: [
-    { label: 'Overview', href: '/admin', icon: <BarChart3 size={20} /> },
-    { label: 'Issues', href: '/admin/issues', icon: <FileText size={20} /> },
-    { label: 'Workers', href: '/admin/workers', icon: <Users size={20} /> },
-    { label: 'Map View', href: '/admin/map', icon: <MapPin size={20} /> },
+    { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={20} /> },
+    { label: 'Complaints', href: '/admin/issues', icon: <FileText size={20} /> },
+    { label: 'Inspectors', href: '/admin/workers', icon: <Users size={20} /> },
+    { label: 'Complaint Map', href: '/admin/map', icon: <MapPin size={20} /> },
+    { label: 'Reports', href: '/admin/reports', icon: <BarChart3 size={20} /> },
+    { label: 'Notifications', href: '/admin/notifications', icon: <Bell size={20} /> },
   ],
 };
 

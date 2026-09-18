@@ -32,8 +32,14 @@ export type IssueStatus =
   | 'reported'
   | 'acknowledged'
   | 'assigned'
+  | 'inspection'
   | 'in_progress'
-  | 'resolved';
+  | 'resolved'
+  | 'admin_review'
+  | 'closed'
+  | 'reopened'
+  | 'rejected'
+  | 'referred';
 
 export type UrgencyLevel = 'low' | 'medium' | 'high';
 
@@ -102,6 +108,9 @@ export interface Issue {
   reporterName: string;
   assignedTo?: string; // Worker User ID
   assignedWorkerName?: string;
+  assignedAt?: string;
+  rejectionReason?: string;
+  reopenedReason?: string;
   upvotes: string[]; // Array of User IDs
   upvoteCount: number;
   resolutionPhoto?: string;
@@ -115,6 +124,12 @@ export interface Issue {
 
 export interface DashboardAnalytics {
   totalIssues: number;
+  pendingAssignment: number; // reported, reopened
+  assigned: number; // assigned, inspection
+  inProgress: number; // in_progress
+  resolutionReview: number; // admin_review
+  closed: number; // closed, resolved (legacy)
+  overdue: number;
   resolvedIssues: number;
   pendingIssues: number;
   inProgressIssues: number;

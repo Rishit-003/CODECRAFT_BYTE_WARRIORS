@@ -73,6 +73,21 @@ export async function PATCH(
         read: false
       });
     }
+
+    // Notify worker if rejected/reopened
+    if (body.status === 'reopened' && issue.assignedTo) {
+      const notifId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      await setDoc(doc(collection(db, 'notifications'), notifId), {
+        id: notifId,
+        userId: issue.assignedTo,
+        title: body.rejectionReason ? 'Resolution Rejected' : 'Task Reopened',
+        message: `Task "${issue.title}" has been reopened. Reason: ${body.rejectionReason || body.reopenedReason}`,
+        type: 'status_update',
+        link: `/worker`,
+        createdAt: new Date().toISOString(),
+        read: false
+      });
+    }
     
     const updatedSnap = await getDoc(issueRef);
     return NextResponse.json({ issue: updatedSnap.data() });

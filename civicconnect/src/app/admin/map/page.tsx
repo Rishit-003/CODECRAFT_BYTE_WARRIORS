@@ -110,13 +110,21 @@ export default function AdminMapPage() {
             <div className="flex-1">
               <h3 className="font-semibold">{selectedIssue.title}</h3>
               <p className="text-sm text-[var(--color-text-secondary)] mt-1">{selectedIssue.description}</p>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className="badge text-[10px]" style={{ background: STATUS_CONFIG[selectedIssue.status].bgColor, color: STATUS_CONFIG[selectedIssue.status].color }}>{STATUS_CONFIG[selectedIssue.status].label}</span>
-                <span className="badge text-[10px]" style={{ background: URGENCY_CONFIG[selectedIssue.urgency].bgColor, color: URGENCY_CONFIG[selectedIssue.urgency].color }}>{URGENCY_CONFIG[selectedIssue.urgency].icon} {URGENCY_CONFIG[selectedIssue.urgency].label}</span>
-                <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1"><MapPin size={10} />{selectedIssue.location.address}</span>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="badge text-[10px]" style={{ background: STATUS_CONFIG[selectedIssue.status].bgColor, color: STATUS_CONFIG[selectedIssue.status].color }}>{STATUS_CONFIG[selectedIssue.status].label}</span>
+                  <span className="badge text-[10px]" style={{ background: URGENCY_CONFIG[selectedIssue.urgency].bgColor, color: URGENCY_CONFIG[selectedIssue.urgency].color }}>{URGENCY_CONFIG[selectedIssue.urgency].icon} {URGENCY_CONFIG[selectedIssue.urgency].label}</span>
+                  <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1"><MapPin size={10} />{selectedIssue.location.address}</span>
+                </div>
+                <a 
+                  href={`/admin/issues/${selectedIssue.id}`} 
+                  className="btn-primary text-xs py-1.5 px-3 whitespace-nowrap"
+                >
+                  View Full Details
+                </a>
               </div>
             </div>
-            <button onClick={() => setSelectedIssue(null)} className="text-xs text-[var(--color-text-muted)] hover:text-white">✕</button>
+            <button onClick={() => setSelectedIssue(null)} className="text-xs text-[var(--color-text-muted)] hover:text-white p-1">✕</button>
           </div>
         </div>
       )}

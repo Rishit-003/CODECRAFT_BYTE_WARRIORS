@@ -1,224 +1,239 @@
 'use client';
 
 // ============================================
-// CivicConnect — Admin Issue Management
+// CivicConnect — Admin Complaints Management
 // ============================================
 
-import { useEffect, useState } from 'react';
-import { Issue, WorkerUser, IssueStatus, Department } from '@/types';
-import { STATUS_CONFIG, URGENCY_CONFIG, CATEGORY_CONFIG, DEPARTMENTS, STATUS_PIPELINE } from '@/constants';
-import {
-  Search, Filter, UserPlus, ChevronDown,
-  MapPin, X, CheckCircle2,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useEffect, useState, useMemo } from 'react';
+import { Issue, IssueStatus, UrgencyLevel, IssueCategory } from '@/types';
+import { STATUS_CONFIG, URGENCY_CONFIG, CATEGORY_CONFIG } from '@/constants';
+import { Search, Filter, MapPin, Eye } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminIssuesPage() {
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [workers, setWorkers] = useState<WorkerUser[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatus | 'all'>('all');
-  const [deptFilter, setDeptFilter] = useState<Department | 'all'>('all');
-  const [assignModalIssue, setAssignModalIssue] = useState<Issue | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<IssueCategory | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<UrgencyLevel | 'all'>('all');
+  const [assignedFilter, setAssignedFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/issues').then((r) => r.json()),
-      fetch('/api/workers').then((r) => r.json()),
-    ]).then(([issueData, workerData]) => {
-      setIssues(issueData.issues || []);
-      setWorkers(workerData.workers || []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetch('/api/issues')
+      .then((r) => r.json())
+      .then((data) => {
+        setIssues(data.issues || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  const handleAssign = async (issueId: string, workerId: string, workerName: string) => {
-    try {
-      const res = await fetch(`/api/issues/${issueId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignedTo: workerId, assignedWorkerName: workerName, status: 'assigned' }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setIssues((prev) => prev.map((i) => i.id === issueId ? data.issue : i));
-        setAssignModalIssue(null);
-        toast.success(`Assigned to ${workerName}`);
+  const filtered = useMemo(() => {
+    return issues.filter(issue => {
+      // Search
+      if (search) {
+        const query = search.toLowerCase();
+        const matchesId = issue.id.toLowerCase().includes(query);
+        const matchesTitle = issue.title.toLowerCase().includes(query);
+        const matchesLocation = issue.location.address.toLowerCase().includes(query);
+        const matchesCitizen = issue.reporterName.toLowerCase().includes(query);
+        if (!matchesId && !matchesTitle && !matchesLocation && !matchesCitizen) return false;
       }
-    } catch { toast.error('Failed to assign'); }
-  };
+      
+      // Filters
+      if (statusFilter !== 'all' && issue.status !== statusFilter) return false;
+      if (categoryFilter !== 'all' && issue.category !== categoryFilter) return false;
+      if (priorityFilter !== 'all' && issue.urgency !== priorityFilter) return false;
+      
+      if (assignedFilter === 'assigned' && !issue.assignedTo) return false;
+      if (assignedFilter === 'unassigned' && issue.assignedTo) return false;
 
-  const handleStatusChange = async (issueId: string, status: IssueStatus) => {
-    try {
-      const body: Record<string, unknown> = { status };
-      if (status === 'resolved') body.resolvedAt = new Date().toISOString();
-
-      const res = await fetch(`/api/issues/${issueId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setIssues((prev) => prev.map((i) => i.id === issueId ? data.issue : i));
-        toast.success(`Status updated to ${status.replace('_', ' ')}`);
-      }
-    } catch { toast.error('Failed to update status'); }
-  };
-
-  // Filter
-  let filtered = issues;
-  if (statusFilter !== 'all') filtered = filtered.filter((i) => i.status === statusFilter);
-  if (deptFilter !== 'all') filtered = filtered.filter((i) => i.department === deptFilter);
-  if (search) filtered = filtered.filter((i) => i.title.toLowerCase().includes(search.toLowerCase()) || i.location.address.toLowerCase().includes(search.toLowerCase()));
-
-  const availableWorkers = assignModalIssue
-    ? workers.filter((w) => w.department === assignModalIssue.department && w.isActive)
-    : [];
+      return true;
+    });
+  }, [issues, search, statusFilter, categoryFilter, priorityFilter, assignedFilter]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in flex flex-col h-full">
       <div>
-        <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-          Issue <span className="gradient-text">Management</span>
+        <h1 className="text-2xl font-bold font-display">
+          All <span className="gradient-text">Complaints</span>
         </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">View, assign, and manage all reported issues</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
+          Comprehensive view of all civic complaints across the city.
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="glass-card-static p-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+      {/* Filters Bar */}
+      <div className="glass-card-static p-4 flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[250px]">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search issues..." className="input-field pl-10 py-2" style={{ paddingLeft: '40px' }} />
+          <input 
+            type="text" 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)} 
+            placeholder="Search by ID, Citizen, Title, Location..." 
+            className="input-field pl-10 py-2 w-full text-sm" 
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-[var(--color-text-muted)]" />
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as IssueStatus | 'all')} className="input-field py-2 text-sm min-w-[130px]">
-            <option value="all">All Status</option>
-            {STATUS_PIPELINE.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
-          </select>
-          <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value as Department | 'all')} className="input-field py-2 text-sm min-w-[150px]">
-            <option value="all">All Departments</option>
-            {Object.entries(DEPARTMENTS).map(([key, dept]) => <option key={key} value={key}>{dept.icon} {dept.label}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {/* Results count */}
-      <p className="text-sm text-[var(--color-text-muted)]">{filtered.length} issues found</p>
-
-      {/* Issues Table */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: 'var(--color-bg-tertiary)' }} />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map((issue) => {
-            const status = STATUS_CONFIG[issue.status];
-            const urgency = URGENCY_CONFIG[issue.urgency];
-            const category = CATEGORY_CONFIG[issue.category];
-            const dept = DEPARTMENTS[issue.department];
-
-            return (
-              <div key={issue.id} className="glass-card-static p-4 rounded-xl" style={{ borderLeft: `3px solid ${urgency.color}` }}>
-                <div className="flex items-start gap-4">
-                  <span className="text-2xl flex-shrink-0">{category?.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-medium text-sm">{issue.title}</p>
-                        <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 mt-0.5">
-                          <MapPin size={10} /> {issue.location.address}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className="badge text-[10px]" style={{ background: status.bgColor, color: status.color }}>{status.label}</span>
-                      <span className="badge text-[10px]" style={{ background: urgency.bgColor, color: urgency.color }}>{urgency.icon} {urgency.label}</span>
-                      <span className="badge text-[10px]" style={{ background: `${dept?.color}20`, color: dept?.color }}>{dept?.icon} {dept?.label}</span>
-                      {issue.assignedWorkerName && (
-                        <span className="text-xs text-[var(--color-text-muted)]">🔧 {issue.assignedWorkerName}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Status dropdown */}
-                    <div className="relative">
-                      <select
-                        value={issue.status}
-                        onChange={(e) => handleStatusChange(issue.id, e.target.value as IssueStatus)}
-                        className="input-field py-1.5 px-3 text-xs min-w-[120px]"
-                        style={{ background: status.bgColor, color: status.color, borderColor: `${status.color}30` }}
-                      >
-                        {STATUS_PIPELINE.map((s) => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
-                      </select>
-                    </div>
-                    {/* Assign button */}
-                    <button
-                      onClick={() => setAssignModalIssue(issue)}
-                      className="btn-ghost text-xs py-1.5 px-3"
-                      title="Assign worker"
-                    >
-                      <UserPlus size={14} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Assign Modal */}
-      {assignModalIssue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)' }}>
-          <div className="glass-card-static p-6 w-full max-w-md animate-fade-in" style={{ borderRadius: '20px' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)' }}>Assign Worker</h3>
-              <button onClick={() => setAssignModalIssue(null)} className="p-1 hover:bg-white/5 rounded-lg">
-                <X size={18} />
-              </button>
-            </div>
-
-            <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-              Assign a <strong>{DEPARTMENTS[assignModalIssue.department]?.label}</strong> worker to: <em>{assignModalIssue.title}</em>
-            </p>
-
-            {availableWorkers.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-sm text-[var(--color-text-muted)]">No active workers in this department</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {availableWorkers.map((worker) => (
-                  <button
-                    key={worker.id}
-                    onClick={() => handleAssign(assignModalIssue.id, worker.id, worker.name)}
-                    className="w-full p-3 rounded-xl flex items-center gap-3 text-left transition-all hover:bg-white/[0.05]"
-                    style={{ background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-subtle)' }}
-                  >
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: 'var(--color-accent-amber)' }}>
-                      {worker.name.charAt(0)}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{worker.name}</p>
-                      <p className="text-xs text-[var(--color-text-muted)]">{worker.designation} • {worker.assignedZone}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-[var(--color-accent-green)]">{worker.tasksCompleted} completed</p>
-                      <p className="text-[10px] text-[var(--color-text-muted)]">{worker.avgResolutionTime}h avg</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-[var(--color-text-muted)]" />
+            
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value as any)} 
+              className="input-field py-2 text-sm min-w-[120px]"
+            >
+              <option value="all">All Statuses</option>
+              {Object.keys(STATUS_CONFIG).map((s) => (
+                <option key={s} value={s}>{STATUS_CONFIG[s as IssueStatus].label}</option>
+              ))}
+            </select>
+            
+            <select 
+              value={categoryFilter} 
+              onChange={(e) => setCategoryFilter(e.target.value as any)} 
+              className="input-field py-2 text-sm min-w-[140px]"
+            >
+              <option value="all">All Categories</option>
+              {Object.keys(CATEGORY_CONFIG).map((c) => (
+                <option key={c} value={c}>{CATEGORY_CONFIG[c as IssueCategory].label}</option>
+              ))}
+            </select>
+            
+            <select 
+              value={priorityFilter} 
+              onChange={(e) => setPriorityFilter(e.target.value as any)} 
+              className="input-field py-2 text-sm min-w-[120px]"
+            >
+              <option value="all">All Priorities</option>
+              <option value="high">High Priority</option>
+              <option value="medium">Medium Priority</option>
+              <option value="low">Low Priority</option>
+            </select>
+            
+            <select 
+              value={assignedFilter} 
+              onChange={(e) => setAssignedFilter(e.target.value as any)} 
+              className="input-field py-2 text-sm min-w-[130px]"
+            >
+              <option value="all">Any Assignment</option>
+              <option value="assigned">Assigned</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
           </div>
         </div>
-      )}
+      </div>
+
+      <div className="flex justify-between items-center text-sm text-[var(--color-text-muted)]">
+        <p>Showing {filtered.length} complaints</p>
+      </div>
+
+      {/* Table */}
+      <div className="glass-card-static flex-1 overflow-hidden flex flex-col">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead className="text-[var(--color-text-muted)] border-b border-[var(--color-border-glass)] sticky top-0 bg-[rgba(20,24,54,0.95)] backdrop-blur-md z-10">
+              <tr>
+                <th className="p-4 font-medium">ID</th>
+                <th className="p-4 font-medium">Category & Title</th>
+                <th className="p-4 font-medium">Location</th>
+                <th className="p-4 font-medium">Citizen</th>
+                <th className="p-4 font-medium">Date Reported</th>
+                <th className="p-4 font-medium">Priority</th>
+                <th className="p-4 font-medium">Status</th>
+                <th className="p-4 font-medium">Inspector</th>
+                <th className="p-4 font-medium text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border-glass)]">
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="p-8 text-center">
+                    <div className="inline-block w-6 h-6 border-2 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin mb-2" />
+                    <p className="text-[var(--color-text-muted)] text-sm">Loading complaints...</p>
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="p-12 text-center text-[var(--color-text-muted)]">
+                    <Filter size={32} className="mx-auto mb-3 opacity-20" />
+                    <p>No complaints match your filters.</p>
+                    <button 
+                      onClick={() => {
+                        setSearch(''); setStatusFilter('all'); setCategoryFilter('all'); 
+                        setPriorityFilter('all'); setAssignedFilter('all');
+                      }}
+                      className="mt-4 text-[var(--color-accent-blue)] hover:underline"
+                    >
+                      Clear all filters
+                    </button>
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(issue => (
+                  <tr key={issue.id} className="hover:bg-white/5 transition-colors">
+                    <td className="p-4 font-mono text-xs text-[var(--color-text-secondary)]">{issue.id.slice(0, 8)}</td>
+                    <td className="p-4">
+                      <p className="font-medium">{issue.title}</p>
+                      <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 mt-1">
+                        {CATEGORY_CONFIG[issue.category]?.icon} {CATEGORY_CONFIG[issue.category]?.label}
+                      </p>
+                    </td>
+                    <td className="p-4 max-w-[150px] truncate">
+                      <span className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]" title={issue.location.address}>
+                        <MapPin size={12} className="shrink-0" />
+                        <span className="truncate">{issue.location.address}</span>
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs">{issue.reporterName}</td>
+                    <td className="p-4 text-xs text-[var(--color-text-secondary)]">
+                      {new Date(issue.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                      })}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider`}
+                            style={{ background: URGENCY_CONFIG[issue.urgency]?.bgColor, color: URGENCY_CONFIG[issue.urgency]?.color }}>
+                        {issue.urgency}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide`}
+                            style={{ background: STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.bgColor, color: STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.color }}>
+                        {STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.label || issue.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs text-[var(--color-text-secondary)]">
+                      {issue.assignedWorkerName ? (
+                         <span className="flex items-center gap-1">
+                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-amber)]" />
+                           {issue.assignedWorkerName}
+                         </span>
+                      ) : (
+                        <span className="text-[var(--color-text-muted)] italic">Unassigned</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <Link 
+                        href={`/admin/issues/${issue.id}`} 
+                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[var(--color-accent-blue)] transition-colors"
+                        title="View Details"
+                      >
+                        <Eye size={16} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
