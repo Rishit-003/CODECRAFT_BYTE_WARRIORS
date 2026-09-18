@@ -103,18 +103,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
         <div className="p-5 flex items-center justify-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold" style={{ background: '#e4f0eb', color: '#173b36' }}>
-              CC
-            </div>
-            <div>
-              <span className="font-bold text-base text-white" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span>
-              <div className="text-[10px] mt-0.5 uppercase tracking-[0.12em] text-[#b8ccc4]">
-                {ROLE_LABELS[user.role]}
-              </div>
+          <div className="flex flex-col gap-1.5">
+            <img src="/logo-white.png" alt="CivicConnect Logo" className="h-9 w-auto max-w-[180px] object-contain" />
+            <div className="text-[10px] uppercase tracking-[0.14em] text-[#b8ccc4] font-semibold pl-0.5">
+              {ROLE_LABELS[user.role]}
             </div>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-[var(--color-text-muted)]">
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-[var(--color-text-muted)] hover:text-white p-1">
             <X size={20} />
           </button>
         </div>
@@ -156,9 +151,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="md:ml-[260px]">
         {/* Top Bar */}
         <header className="sticky top-0 z-40 px-6 py-4 flex items-center justify-between" style={{ background: 'rgba(247,248,244,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--color-border-glass)' }}>
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden text-[var(--color-text-secondary)]">
-            <Menu size={24} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)} className="md:hidden text-[var(--color-text-secondary)]">
+              <Menu size={24} />
+            </button>
+            <div className="md:hidden flex items-center">
+              <img src="/logo.png" alt="CivicConnect Logo" className="h-7 w-auto" />
+            </div>
+          </div>
 
           <div className="hidden md:block">
             <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)' }}>

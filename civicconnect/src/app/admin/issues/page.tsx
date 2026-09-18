@@ -89,8 +89,8 @@ export default function AdminIssuesPage() {
       {/* Filters */}
       <div className="glass-card-static p-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search issues..." className="input-field pl-10 py-2" />
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search issues..." className="input-field pl-10 py-2" style={{ paddingLeft: '40px' }} />
         </div>
         <div className="flex items-center gap-2">
           <Filter size={14} className="text-[var(--color-text-muted)]" />

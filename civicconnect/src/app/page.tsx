@@ -19,7 +19,7 @@ export default function LandingPage() {
   return <div className="min-h-screen bg-[var(--color-bg-primary)]">
     <nav className="border-b border-[var(--color-border-glass)] bg-white">
       <div className="max-w-6xl mx-auto px-5 h-18 min-h-[72px] flex items-center justify-between">
-        <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-[#173b36] text-white flex items-center justify-center font-bold text-sm">CC</div><span className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span></div>
+        <div className="flex items-center gap-3"><img src="/logo.png" alt="CivicConnect Logo" className="h-11 w-auto" /></div>
         <div className="flex items-center gap-2"><button onClick={() => router.push('/login')} className="btn-ghost">Sign in</button><button onClick={() => router.push('/signup')} className="btn-primary">Create account <ArrowRight size={16}/></button></div>
       </div>
     </nav>
@@ -28,8 +28,12 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-5 py-16 md:py-24 grid lg:grid-cols-[1.15fr_.85fr] gap-10 items-center">
         <div>
           <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--color-accent-blue)] mb-5">A better way to care for your neighbourhood</p>
-          <h1 className="text-4xl md:text-6xl leading-[1.05] font-bold max-w-2xl" style={{ fontFamily: 'var(--font-display)' }}>See a problem.<br/>Start the fix.</h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-[var(--color-text-secondary)]">CivicConnect makes it simple to report local issues, keeps every update in one place, and helps city teams resolve work with less friction.</p>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold max-w-2xl tracking-tight text-[var(--color-text-primary)] leading-[1.15]">
+            Your everyday issues deserve attention.
+          </h1>
+          <p className="mt-5 max-w-xl text-base md:text-lg leading-relaxed text-[var(--color-text-secondary)]">
+            From broken streetlights to overflowing bins, report local problems and stay informed until they&apos;re resolved.
+          </p>
           <div className="flex flex-wrap gap-3 mt-8"><button onClick={() => router.push('/signup')} className="btn-primary px-5 py-3">Report an issue <ArrowRight size={17}/></button><button onClick={() => router.push('/login')} className="btn-secondary px-5 py-3">I already have an account</button></div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 mt-8 text-sm text-[var(--color-text-secondary)]"><span className="flex gap-2 items-center"><CheckCircle2 size={16} className="text-[var(--color-accent-green)]"/>Clear status updates</span><span className="flex gap-2 items-center"><CheckCircle2 size={16} className="text-[var(--color-accent-green)]"/>Location-based reporting</span></div>
         </div>
@@ -47,6 +51,13 @@ export default function LandingPage() {
 
       <section className="max-w-6xl mx-auto px-5 py-16"><div className="grid md:grid-cols-3 gap-8">{steps.map(([number,title,text]) => <div key={number} className="border-t-2 border-[var(--color-accent-blue)] pt-4"><p className="text-xs font-bold text-[var(--color-accent-blue)]">{number}</p><h3 className="text-lg font-bold mt-3">{title}</h3><p className="text-sm leading-6 mt-2 text-[var(--color-text-secondary)]">{text}</p></div>)}</div></section>
     </main>
-    <footer className="border-t border-[var(--color-border-glass)]"><div className="max-w-6xl mx-auto px-5 py-6 text-sm text-[var(--color-text-muted)]">CivicConnect · Community issue reporting</div></footer>
+    <footer className="border-t border-[var(--color-border-glass)] bg-white">
+      <div className="max-w-6xl mx-auto px-5 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="CivicConnect Logo" className="h-8 w-auto" />
+        </div>
+        <div className="text-sm text-[var(--color-text-muted)]">CivicConnect · Community issue reporting</div>
+      </div>
+    </footer>
   </div>;
 }

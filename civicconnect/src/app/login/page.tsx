@@ -77,9 +77,8 @@ export default function LoginPage() {
         <div className="glass-card-static p-8 animate-fade-in">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="text-2xl">🏙️</span>
-              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span>
+            <div className="inline-flex items-center justify-center mb-3">
+              <img src="/logo.png" alt="CivicConnect Logo" className="h-12 w-auto" />
             </div>
             <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-display)' }}>Welcome Back</h1>
             <p className="text-sm text-[var(--color-text-secondary)]">Sign in to your account</p>
@@ -116,13 +115,14 @@ export default function LoginPage() {
             <div>
               <label className="input-label">Email Address</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email"
                   className="input-field pl-11"
+                  style={{ paddingLeft: '44px' }}
                   required
                 />
               </div>
@@ -131,19 +131,20 @@ export default function LoginPage() {
             <div>
               <label className="input-label">Password</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   className="input-field pl-11 pr-11"
+                  style={{ paddingLeft: '44px', paddingRight: '44px' }}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>

@@ -107,9 +107,8 @@ export default function SignupPage() {
         <div className="glass-card-static p-8 animate-fade-in">
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="text-2xl">🏙️</span>
-              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>CivicConnect</span>
+            <div className="inline-flex items-center justify-center mb-3">
+              <img src="/logo.png" alt="CivicConnect Logo" className="h-12 w-auto" />
             </div>
             <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>Create Account</h1>
           </div>
@@ -168,23 +167,23 @@ export default function SignupPage() {
               <div>
                 <label className="input-label">Full Name</label>
                 <div className="relative">
-                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                  <input type="text" value={formData.name} onChange={(e) => updateForm('name', e.target.value)} placeholder="Enter your full name" className="input-field pl-11" required />
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                  <input type="text" value={formData.name} onChange={(e) => updateForm('name', e.target.value)} placeholder="Enter your full name" className="input-field pl-11" style={{ paddingLeft: '44px' }} required />
                 </div>
               </div>
               <div>
                 <label className="input-label">Email Address</label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                  <input type="email" value={formData.email} onChange={(e) => updateForm('email', e.target.value)} placeholder="Enter your email" className="input-field pl-11" required />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                  <input type="email" value={formData.email} onChange={(e) => updateForm('email', e.target.value)} placeholder="Enter your email" className="input-field pl-11" style={{ paddingLeft: '44px' }} required />
                 </div>
               </div>
               <div>
                 <label className="input-label">Password</label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                  <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => updateForm('password', e.target.value)} placeholder="Create a password" className="input-field pl-11 pr-11" required />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-white">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                  <input type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => updateForm('password', e.target.value)} placeholder="Create a password" className="input-field pl-11 pr-11" style={{ paddingLeft: '44px', paddingRight: '44px' }} required />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]">
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
@@ -192,8 +191,8 @@ export default function SignupPage() {
               <div>
                 <label className="input-label">Phone Number <span className="text-[var(--color-text-muted)]">(optional)</span></label>
                 <div className="relative">
-                  <Phone size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                  <input type="tel" value={formData.phone} onChange={(e) => updateForm('phone', e.target.value)} placeholder="Enter phone number" className="input-field pl-11" />
+                  <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                  <input type="tel" value={formData.phone} onChange={(e) => updateForm('phone', e.target.value)} placeholder="Enter phone number" className="input-field pl-11" style={{ paddingLeft: '44px' }} />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -224,8 +223,8 @@ export default function SignupPage() {
                   <div>
                     <label className="input-label">Address <span className="text-[var(--color-text-muted)]">(optional)</span></label>
                     <div className="relative">
-                      <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                      <input type="text" value={formData.address} onChange={(e) => updateForm('address', e.target.value)} placeholder="Your address" className="input-field pl-11" />
+                      <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                      <input type="text" value={formData.address} onChange={(e) => updateForm('address', e.target.value)} placeholder="Your address" className="input-field pl-11" style={{ paddingLeft: '44px' }} />
                     </div>
                   </div>
                   <div>
@@ -243,8 +242,8 @@ export default function SignupPage() {
                   <div>
                     <label className="input-label">Department *</label>
                     <div className="relative">
-                      <Building size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                      <select value={formData.department} onChange={(e) => { updateForm('department', e.target.value); updateForm('designation', ''); }} className="input-field pl-11" required>
+                      <Building size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                      <select value={formData.department} onChange={(e) => { updateForm('department', e.target.value); updateForm('designation', ''); }} className="input-field pl-11" style={{ paddingLeft: '44px' }} required>
                         <option value="">Select department</option>
                         {Object.entries(DEPARTMENTS).map(([key, dept]) => (
                           <option key={key} value={key}>{dept.icon} {dept.label}</option>
@@ -264,8 +263,8 @@ export default function SignupPage() {
                   <div>
                     <label className="input-label">Employee ID *</label>
                     <div className="relative">
-                      <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                      <input type="text" value={formData.employeeId} onChange={(e) => updateForm('employeeId', e.target.value)} placeholder="EMP-XXXX" className="input-field pl-11" required />
+                      <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                      <input type="text" value={formData.employeeId} onChange={(e) => updateForm('employeeId', e.target.value)} placeholder="EMP-XXXX" className="input-field pl-11" style={{ paddingLeft: '44px' }} required />
                     </div>
                   </div>
                   <div>
@@ -283,8 +282,8 @@ export default function SignupPage() {
                   <div>
                     <label className="input-label">Admin ID *</label>
                     <div className="relative">
-                      <Hash size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" />
-                      <input type="text" value={formData.adminId} onChange={(e) => updateForm('adminId', e.target.value)} placeholder="ADM-XXX" className="input-field pl-11" required />
+                      <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
+                      <input type="text" value={formData.adminId} onChange={(e) => updateForm('adminId', e.target.value)} placeholder="ADM-XXX" className="input-field pl-11" style={{ paddingLeft: '44px' }} required />
                     </div>
                   </div>
                   <div>

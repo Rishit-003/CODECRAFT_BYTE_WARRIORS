@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: "CivicConnect — Smart City Civic Engagement Platform",
   description: "Report urban infrastructure issues, track resolutions, and engage with your city government. Built for citizens, workers, and administrators.",
   keywords: "civic engagement, smart city, urban mobility, issue reporting, infrastructure",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/logo-icon.png",
+  },
 };
 
 export default function RootLayout({
