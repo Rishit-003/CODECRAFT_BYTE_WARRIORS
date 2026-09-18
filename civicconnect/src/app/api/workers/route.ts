@@ -3,21 +3,34 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const department = searchParams.get('department') || undefined;
-  const zone = searchParams.get('zone') || undefined;
-  const isActive = searchParams.get('isActive');
+  try {
+    const { searchParams } = new URL(request.url);
+    const department = searchParams.get('department') || undefined;
+    const zone = searchParams.get('zone') || undefined;
+    const isActive = searchParams.get('isActive');
 
-  const workers = db.getWorkers({
-    department,
-    zone,
-    isActive: isActive !== null ? isActive === 'true' : undefined,
-  });
+    const usersRef = collection(db, 'users');
+    const constraints: any[] = [where('role', '==', 'worker')];
+    
+    if (department) constraints.push(where('department', '==', department));
+    if (zone) constraints.push(where('assignedZone', '==', zone));
+    if (isActive !== null) constraints.push(where('isActive', '==', isActive === 'true'));
 
-  return NextResponse.json({ workers });
+    const q = query(usersRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+    
+    const workers = querySnapshot.docs.map(doc => doc.data());
+    
+    workers.sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({ workers });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: NextRequest) {
@@ -26,12 +39,18 @@ export async function PATCH(request: NextRequest) {
     if (!id) {
       return NextResponse.json({ error: 'Worker ID required' }, { status: 400 });
     }
-    const user = db.updateUser(id, updates);
-    if (!user) {
+
+    const workerRef = doc(db, 'users', id);
+    await updateDoc(workerRef, updates);
+    
+    const updatedSnap = await getDoc(workerRef);
+    
+    if (!updatedSnap.exists()) {
       return NextResponse.json({ error: 'Worker not found' }, { status: 404 });
     }
-    return NextResponse.json({ worker: user });
-  } catch {
+    
+    return NextResponse.json({ worker: updatedSnap.data() });
+  } catch (error) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

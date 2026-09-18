@@ -3,45 +3,47 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, role } = await request.json();
+    const { email, password, role } = await request.json();
 
-    if (!email || !role) {
+    if (!email || !password || !role) {
       return NextResponse.json(
         { error: 'Email, password, and role are required' },
         { status: 400 }
       );
     }
 
-    // Find user by email
-    const user = db.getUserByEmail(email);
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email), where('role', '==', role));
+    const querySnapshot = await getDocs(q);
 
-    if (!user) {
+    if (querySnapshot.empty) {
       return NextResponse.json(
-        { error: 'No account found with this email. Please sign up first.' },
-        { status: 404 }
+        { error: 'Invalid credentials or user not found' },
+        { status: 401 }
       );
     }
 
-    if (user.role !== role) {
-      return NextResponse.json(
-        { error: `This email is registered as a ${user.role}, not a ${role}` },
-        { status: 403 }
-      );
-    }
+    const userDoc = querySnapshot.docs[0];
+    const user = userDoc.data();
 
-    // In production, verify password hash here
-    // For demo, any password works
+    // WARNING: In a real application, you MUST verify the password using bcrypt or similar.
+    // Since Firebase Auth is usually used, this is a placeholder if you are storing passwords manually.
+    // For this MVP, we assume password validation happens on the client or is mocked here.
+    
+    // For demo purposes, we will just let them in if the email and role match.
 
     return NextResponse.json({
       success: true,
       user,
       message: 'Login successful',
     });
-  } catch {
+  } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

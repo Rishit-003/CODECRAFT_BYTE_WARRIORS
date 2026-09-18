@@ -3,8 +3,14 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { User, UserRole } from '@/types';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { UserRole } from '@/types';
+
+// Helper to remove undefined fields because Firestore throws an error on undefined
+function cleanData(obj: any) {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,8 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists
-    const existing = db.getUserByEmail(email);
-    if (existing) {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
       return NextResponse.json(
         { error: 'An account with this email already exists' },
         { status: 409 }
@@ -33,20 +42,20 @@ export async function POST(request: NextRequest) {
       firebaseUid: `fb-${baseId}`,
       name,
       email,
-      phone: phone || undefined,
+      phone: phone || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    let newUser: User;
+    let newUser: any;
 
     switch (role as UserRole) {
       case 'citizen':
         newUser = {
           ...baseUser,
-          role: 'citizen' as const,
-          address: body.address || undefined,
-          area: body.area || undefined,
+          role: 'citizen',
+          address: body.address || null,
+          area: body.area || null,
         };
         break;
 
@@ -59,7 +68,7 @@ export async function POST(request: NextRequest) {
         }
         newUser = {
           ...baseUser,
-          role: 'worker' as const,
+          role: 'worker',
           department: body.department,
           designation: body.designation,
           employeeId: body.employeeId,
@@ -80,7 +89,7 @@ export async function POST(request: NextRequest) {
         }
         newUser = {
           ...baseUser,
-          role: 'admin' as const,
+          role: 'admin',
           adminId: body.adminId,
           departmentOversight: body.departmentOversight || [],
           accessLevel: body.accessLevel || 'department_admin',
@@ -94,14 +103,16 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    db.addUser(newUser);
+    // Save to Firestore DB (cleaned of any stray undefineds)
+    await setDoc(doc(usersRef, newUser.id), cleanData(newUser));
 
     return NextResponse.json({
       success: true,
-      user: newUser,
+      user: newUser, // Return full interface for frontend state
       message: 'Account created successfully',
     }, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error('Registration error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

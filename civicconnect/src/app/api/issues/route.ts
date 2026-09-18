@@ -3,63 +3,87 @@
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
-import { CATEGORY_CONFIG } from '@/constants';
-import { IssueCategory } from '@/types';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, doc, setDoc, orderBy } from 'firebase/firestore';
 
-// GET /api/issues — List issues with filters
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const department = searchParams.get('department') || undefined;
-  const status = searchParams.get('status') || undefined;
-  const urgency = searchParams.get('urgency') || undefined;
-  const reportedBy = searchParams.get('reportedBy') || undefined;
-  const assignedTo = searchParams.get('assignedTo') || undefined;
+  try {
+    const { searchParams } = new URL(request.url);
+    const department = searchParams.get('department') || undefined;
+    const status = searchParams.get('status') || undefined;
+    const reportedBy = searchParams.get('reportedBy') || undefined;
 
-  const issues = db.getIssues({ department, status, urgency, reportedBy, assignedTo });
-  return NextResponse.json({ issues });
+    const issuesRef = collection(db, 'issues');
+    const constraints: any[] = [];
+    
+    if (department) constraints.push(where('department', '==', department));
+    if (status) constraints.push(where('status', '==', status));
+    if (reportedBy) constraints.push(where('reportedBy', '==', reportedBy));
+    
+    const q = constraints.length > 0 ? query(issuesRef, ...constraints) : query(issuesRef);
+    
+    const querySnapshot = await getDocs(q);
+    const issues = querySnapshot.docs.map(doc => doc.data());
+    
+    // Sort descending by createdAt manually for MVP to avoid needing a composite index immediately
+    issues.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return NextResponse.json({ issues });
+  } catch (error) {
+    console.error('Fetch issues error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
-// POST /api/issues — Create new issue
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, category, urgency, location, photos, reportedBy, reporterName } = body;
+    const {
+      title,
+      description,
+      category,
+      department,
+      location,
+      urgency,
+      reportedBy,
+      reporterName,
+    } = body;
 
-    if (!title || !description || !category || !urgency || !location || !reportedBy) {
+    if (!title || !description || !category || !location || !reportedBy) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Auto-map category to department
-    const categoryConfig = CATEGORY_CONFIG[category as IssueCategory];
-    if (!categoryConfig) {
-      return NextResponse.json(
-        { error: 'Invalid category' },
-        { status: 400 }
-      );
-    }
-
-    const issue = db.addIssue({
+    const id = `iss-${Date.now()}`;
+    const newIssue = {
+      id,
       title,
       description,
       category,
-      department: categoryConfig.department,
+      department: department || 'other',
       status: 'reported',
-      urgency,
+      urgency: urgency || 'low',
       location,
-      photos: photos || [],
+      photos: [],
       reportedBy,
       reporterName: reporterName || 'Anonymous',
-    });
+      upvotes: [],
+      upvoteCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-    return NextResponse.json({ issue }, { status: 201 });
-  } catch {
+    const issuesRef = collection(db, 'issues');
+    await setDoc(doc(issuesRef, id), newIssue);
+
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { issue: newIssue, message: 'Issue reported successfully' },
+      { status: 201 }
     );
+  } catch (error) {
+    console.error('Create issue error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

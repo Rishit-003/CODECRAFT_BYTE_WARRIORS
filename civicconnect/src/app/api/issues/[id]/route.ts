@@ -1,79 +1,103 @@
 // ============================================
-// CivicConnect — Single Issue API
+// CivicConnect — Issue Details API
 // ============================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/mock-db';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc, deleteDoc, setDoc, collection } from 'firebase/firestore';
 
-// GET /api/issues/[id]
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const issue = db.getIssueById(id);
-  if (!issue) {
-    return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
+  try {
+    const { id } = await params;
+    const issueRef = doc(db, 'issues', id);
+    const docSnap = await getDoc(issueRef);
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ issue: docSnap.data() });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json({ issue });
 }
 
-// PATCH /api/issues/[id] — Update issue
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const updates = await request.json();
+    const body = await request.json();
+    
+    const issueRef = doc(db, 'issues', id);
+    const docSnap = await getDoc(issueRef);
 
-    const issue = db.updateIssue(id, updates);
-    if (!issue) {
+    if (!docSnap.exists()) {
       return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
     }
+    
+    const issue = docSnap.data();
 
+    await updateDoc(issueRef, { ...body, updatedAt: new Date().toISOString() });
+    
     // If status changed, create notification for reporter
-    if (updates.status) {
-      db.addNotification({
+    if (body.status) {
+      const notifId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      await setDoc(doc(collection(db, 'notifications'), notifId), {
+        id: notifId,
         userId: issue.reportedBy,
         title: 'Issue Update',
-        message: `Your report "${issue.title}" is now ${updates.status.replace('_', ' ')}`,
+        message: `Your report "${issue.title}" is now ${body.status.replace('_', ' ')}`,
         type: 'status_update',
-        issueId: issue.id,
-        read: false,
+        link: `/citizen/track`,
+        createdAt: new Date().toISOString(),
+        read: false
       });
     }
 
     // If assigned, create notification for worker
-    if (updates.assignedTo) {
-      db.addNotification({
-        userId: updates.assignedTo,
+    if (body.assignedTo) {
+      const notifId = `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      await setDoc(doc(collection(db, 'notifications'), notifId), {
+        id: notifId,
+        userId: body.assignedTo,
         title: 'New Task Assigned',
         message: `You have been assigned: "${issue.title}"`,
         type: 'new_assignment',
-        issueId: issue.id,
-        read: false,
+        link: `/worker`,
+        createdAt: new Date().toISOString(),
+        read: false
       });
     }
-
-    return NextResponse.json({ issue });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    
+    const updatedSnap = await getDoc(issueRef);
+    return NextResponse.json({ issue: updatedSnap.data() });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// DELETE /api/issues/[id]
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const success = db.deleteIssue(id);
-  if (!success) {
-    return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
+  try {
+    const { id } = await params;
+    
+    const issueRef = doc(db, 'issues', id);
+    const docSnap = await getDoc(issueRef);
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: 'Issue not found' }, { status: 404 });
+    }
+
+    await deleteDoc(issueRef);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-  return NextResponse.json({ success: true });
 }
