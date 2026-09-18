@@ -122,6 +122,11 @@ export interface Issue {
   resolutionPhoto?: string;
   resolutionNotes?: string;
   resolvedAt?: string;
+  feedback?: {
+    rating: number;
+    comment: string;
+    createdAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

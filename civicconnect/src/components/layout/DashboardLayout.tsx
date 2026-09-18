@@ -27,6 +27,8 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'Report Issue', href: '/citizen/report', icon: <PlusCircle size={20} /> },
     { label: 'My Reports', href: '/citizen/track', icon: <FileText size={20} /> },
     { label: 'Community Map', href: '/citizen/map', icon: <MapPin size={20} /> },
+    { label: 'Notifications', href: '/citizen/notifications', icon: <Bell size={20} /> },
+    { label: 'Profile', href: '/citizen/profile', icon: <User size={20} /> },
   ],
   worker: [
     { label: 'Dashboard', href: '/worker', icon: <LayoutDashboard size={20} /> },
