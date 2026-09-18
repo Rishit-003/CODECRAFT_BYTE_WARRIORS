@@ -5,6 +5,10 @@ import { useEffect, useState } from 'react';
 import { Issue } from '@/types';
 import { CATEGORY_CONFIG, URGENCY_CONFIG, STATUS_CONFIG, DEPARTMENTS } from '@/constants';
 import { Filter, MapPin } from 'lucide-react';
+import DynamicMap from '@/components/map/DynamicMap';
+
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export default function AdminMapPage() {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -13,10 +17,17 @@ export default function AdminMapPage() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
-    fetch('/api/issues')
-      .then((r) => r.json())
-      .then((data) => { setIssues(data.issues || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedIssues = snapshot.docs.map(doc => doc.data() as Issue);
+      setIssues(fetchedIssues);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching real-time issues:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const filtered = filter === 'all' ? issues : issues.filter((i) => i.department === filter);

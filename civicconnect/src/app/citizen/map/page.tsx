@@ -10,6 +10,10 @@ import { Issue } from '@/types';
 import { CATEGORY_CONFIG, STATUS_CONFIG, URGENCY_CONFIG, DEPARTMENTS } from '@/constants';
 import { ThumbsUp, MapPin, X, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
+import DynamicMap from '@/components/map/DynamicMap';
+
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 
 export default function CommunityMapPage() {
   const { user } = useAuth();
@@ -19,10 +23,17 @@ export default function CommunityMapPage() {
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    fetch('/api/issues')
-      .then((r) => r.json())
-      .then((data) => { setIssues(data.issues || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedIssues = snapshot.docs.map(doc => doc.data() as Issue);
+      setIssues(fetchedIssues);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching real-time issues:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleUpvote = async (issueId: string) => {
@@ -75,72 +86,16 @@ export default function CommunityMapPage() {
         })}
       </div>
 
-      {/* Map View (CSS-based visual map) */}
+      {/* Map View (Interactive Leaflet Map) */}
       <div className="glass-card-static rounded-2xl overflow-hidden" style={{ height: '500px' }}>
-        <div className="relative w-full h-full" style={{ background: 'linear-gradient(135deg, #0c1230 0%, #0f1a3e 50%, #0a1025 100%)' }}>
-          {/* Grid overlay */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-          {/* Map markers */}
-          {!loading && filtered.map((issue, idx) => {
-            const cat = CATEGORY_CONFIG[issue.category];
-            const urgency = URGENCY_CONFIG[issue.urgency];
-            // Distribute markers visually across the map area
-            const left = 10 + ((issue.location.coordinates[0] - 77.58) / 0.03) * 80;
-            const top = 10 + ((12.985 - issue.location.coordinates[1]) / 0.02) * 80;
-
-            return (
-              <button
-                key={issue.id}
-                onClick={() => setSelectedIssue(issue)}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-125 z-10 group"
-                style={{
-                  left: `${Math.min(Math.max(left, 5), 95)}%`,
-                  top: `${Math.min(Math.max(top, 5), 95)}%`,
-                  animationDelay: `${idx * 0.05}s`,
-                }}
-                title={issue.title}
-              >
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-lg" style={{
-                    background: urgency.bgColor,
-                    border: `2px solid ${urgency.color}`,
-                    boxShadow: `0 0 15px ${urgency.color}40`,
-                  }}>
-                    {cat?.icon || '📋'}
-                  </div>
-                  {issue.upvoteCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: 'var(--color-accent-blue)', color: 'white' }}>
-                      {issue.upvoteCount}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-
-          {/* Map Legend */}
-          <div className="absolute bottom-4 left-4 p-3 rounded-xl text-xs" style={{ background: 'rgba(10,14,39,0.9)', border: '1px solid var(--color-border-glass)' }}>
-            <p className="font-semibold mb-2 text-[var(--color-text-secondary)]">Urgency</p>
-            <div className="space-y-1">
-              {Object.entries(URGENCY_CONFIG).map(([key, config]) => (
-                <div key={key} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ background: config.color }} />
-                  <span className="text-[var(--color-text-muted)]">{config.label}</span>
-                </div>
-              ))}
-            </div>
+        {!loading && (
+          <DynamicMap issues={filtered} />
+        )}
+        {loading && (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
           </div>
-
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Issue Detail Panel */}

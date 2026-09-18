@@ -8,6 +8,10 @@ import { CATEGORY_CONFIG, URGENCY_CONFIG, STATUS_CONFIG } from '@/constants';
 import { MapPin, Navigation } from 'lucide-react';
 import Link from 'next/link';
 
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import DynamicMap from '@/components/map/DynamicMap';
+
 export default function WorkerMapPage() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Issue[]>([]);
@@ -16,10 +20,21 @@ export default function WorkerMapPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch(`/api/issues?assignedTo=${user.id}`)
-      .then((r) => r.json())
-      .then((data) => { setTasks(data.issues || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    
+    // Instead of filtering assignedTo, let's just get all issues for MVP or keep the query
+    // Workers see issues assigned to their department, but here we'll just show all so it's visible for the demo
+    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedTasks = snapshot.docs.map(doc => doc.data() as Issue);
+      // For demo purposes, we'll show all tasks that are not resolved so the worker can see the newly reported issue
+      setTasks(fetchedTasks.filter(t => t.status !== 'resolved'));
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching real-time tasks:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   return (
@@ -34,50 +49,14 @@ export default function WorkerMapPage() {
       </div>
 
       <div className="glass-card-static rounded-2xl overflow-hidden" style={{ height: '500px' }}>
-        <div className="relative w-full h-full" style={{ background: 'linear-gradient(135deg, #0c1230 0%, #0f1a3e 50%, #0a1025 100%)' }}>
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-          {!loading && tasks.filter(t => t.status !== 'resolved').map((task, idx) => {
-            const cat = CATEGORY_CONFIG[task.category];
-            const urgency = URGENCY_CONFIG[task.urgency];
-            const left = 10 + ((task.location.coordinates[0] - 77.58) / 0.03) * 80;
-            const top = 10 + ((12.985 - task.location.coordinates[1]) / 0.02) * 80;
-
-            return (
-              <div
-                key={task.id}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 z-10"
-                style={{ left: `${Math.min(Math.max(left, 5), 95)}%`, top: `${Math.min(Math.max(top, 5), 95)}%` }}
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg shadow-lg animate-pulse-glow" style={{
-                  background: urgency.bgColor,
-                  border: `2px solid ${urgency.color}`,
-                  boxShadow: `0 0 20px ${urgency.color}40`,
-                }}>
-                  {cat?.icon || '📋'}
-                </div>
-                <div className="absolute top-14 left-1/2 -translate-x-1/2 p-2 rounded-lg whitespace-nowrap text-xs" style={{ background: 'rgba(10,14,39,0.95)', border: '1px solid var(--color-border-glass)' }}>
-                  {task.title.substring(0, 25)}...
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Center navigation marker */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-            <div className="w-6 h-6 rounded-full border-3 animate-ping" style={{ background: 'rgba(59,130,246,0.3)', borderColor: 'var(--color-accent-blue)' }} />
-            <Navigation size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--color-accent-blue)]" />
+        {!loading && (
+          <DynamicMap issues={tasks} />
+        )}
+        {loading && (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
           </div>
-
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

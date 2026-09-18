@@ -72,17 +72,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, loading, router]);
 
-  // Fetch notification count
   useEffect(() => {
-    if (user) {
-      fetch(`/api/notifications?userId=${user.id}`)
-        .then((r) => r.json())
-        .then((data) => {
-          const unread = data.notifications?.filter((n: { read: boolean }) => !n.read).length || 0;
-          setNotifications(unread);
-        })
-        .catch(() => {});
-    }
+    if (!user) return;
+    
+    import('@/lib/firebase').then(({ db }) => {
+      import('firebase/firestore').then(({ collection, query, where, onSnapshot }) => {
+        const q = query(collection(db, 'notifications'), where('userId', '==', user.id));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+          let unreadCount = 0;
+          snapshot.forEach((doc) => {
+            if (!doc.data().read) unreadCount++;
+          });
+          setNotifications(unreadCount);
+        });
+
+        return () => unsubscribe();
+      });
+    });
   }, [user]);
 
   const handleLogout = () => {
@@ -174,14 +180,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 rounded-xl transition-all hover:bg-white/5">
+            <Link href={`/${user.role}/notifications`} className="relative p-2 rounded-xl transition-all hover:bg-white/5">
               <Bell size={20} className="text-[var(--color-text-secondary)]" />
               {notifications > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: 'var(--color-accent-red)', color: 'white' }}>
                   {notifications}
                 </span>
               )}
-            </button>
+            </Link>
             <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold md:hidden" style={{ background: `${roleColor}20`, color: roleColor }}>
               {user.name.charAt(0)}
             </div>

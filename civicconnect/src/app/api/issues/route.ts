@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       urgency,
       reportedBy,
       reporterName,
+      photos,
     } = body;
 
     if (!title || !description || !category || !location || !reportedBy) {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       status: 'reported',
       urgency: urgency || 'low',
       location,
-      photos: [],
+      photos: photos || [],
       reportedBy,
       reporterName: reporterName || 'Anonymous',
       upvotes: [],
@@ -77,6 +78,18 @@ export async function POST(request: NextRequest) {
 
     const issuesRef = collection(db, 'issues');
     await setDoc(doc(issuesRef, id), newIssue);
+
+    // Create a notification for the citizen
+    const notifId = `notif-${Date.now()}`;
+    await setDoc(doc(collection(db, 'notifications'), notifId), {
+      id: notifId,
+      userId: reportedBy,
+      title: 'Issue Reported Successfully',
+      message: `Your report "${title}" has been successfully submitted and is under review.`,
+      type: 'status_update',
+      read: false,
+      createdAt: new Date().toISOString()
+    });
 
     return NextResponse.json(
       { issue: newIssue, message: 'Issue reported successfully' },

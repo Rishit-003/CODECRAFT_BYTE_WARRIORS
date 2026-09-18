@@ -70,7 +70,7 @@ export default function CitizenDashboard() {
           </div>
           <div>
             <p className="stat-card-value text-2xl">{loading ? '...' : myResolved}</p>
-            <p className="text-xs text-[var(--color-text-muted)]">Resolved</p>
+            <p className="text-xs text-[var(--color-text-muted)]">My Resolved</p>
           </div>
         </div>
 

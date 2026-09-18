@@ -15,7 +15,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
-
+import { storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 export default function ReportIssuePage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -32,12 +33,49 @@ export default function ReportIssuePage() {
     longitude: 77.5946,
   });
 
+  const [analyzing, setAnalyzing] = useState(false);
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhotoPreview(ev.target?.result as string);
+      reader.onload = async (ev) => {
+        const base64Str = ev.target?.result as string;
+        setPhotoPreview(base64Str);
+        
+        // Analyze image with AI
+        setAnalyzing(true);
+        const toastId = toast.loading('AI is analyzing your image...');
+        
+        try {
+          // Extract base64 part and mime type
+          const base64Data = base64Str.split(',')[1];
+          const mimeType = file.type;
+          
+          const aiRes = await fetch('/api/ai/analyze-issue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: base64Data, mimeType })
+          });
+          
+          if (!aiRes.ok) throw new Error('Analysis failed');
+          const aiData = await aiRes.json();
+          
+          if (aiData.success && aiData.data) {
+            setForm(prev => ({
+              ...prev,
+              title: aiData.data.title || prev.title,
+              description: aiData.data.description || prev.description,
+              category: aiData.data.category || prev.category,
+              urgency: aiData.data.urgency || prev.urgency
+            }));
+            toast.success('AI filled in the details!', { id: toastId });
+          }
+        } catch (error) {
+          toast.error('AI analysis failed. Please fill manually.', { id: toastId });
+        } finally {
+          setAnalyzing(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -46,11 +84,18 @@ export default function ReportIssuePage() {
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          
+          // Generate a Google Maps link for the worker
+          const gmapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+          
           setForm((prev) => ({
             ...prev,
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
+            latitude: lat,
+            longitude: lng,
+            address: prev.address || gmapsLink, // Fallback if no address
           }));
           toast.success('Location captured!');
         },
@@ -65,6 +110,10 @@ export default function ReportIssuePage() {
 
     setSubmitting(true);
     try {
+      // Bypassing Firebase Storage and saving directly to Firestore (Base64) 
+      // to avoid any permission rule errors during presentation
+      const finalPhotoUrls = photoPreview ? [photoPreview] : [];
+      
       const res = await fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,7 +127,7 @@ export default function ReportIssuePage() {
             coordinates: [form.longitude, form.latitude],
             address: form.address,
           },
-          photos: photoPreview ? [photoPreview] : [],
+          photos: finalPhotoUrls,
           reportedBy: user.id,
           reporterName: user.name,
         }),
