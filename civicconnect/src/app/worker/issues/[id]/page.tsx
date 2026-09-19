@@ -234,15 +234,12 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
               )}
               <div>
                 <p className="text-xs text-[var(--color-text-muted)] mb-1">Priority</p>
-                <select 
-                  value={issue.urgency}
-                  onChange={(e) => updateIssue({ urgency: e.target.value as any }, 'Priority updated')}
-                  className="input-field w-full text-sm"
+                <div 
+                  className="input-field w-full text-sm flex items-center bg-white/5 cursor-not-allowed opacity-80"
+                  style={{ color: urgencyInfo?.color, borderColor: urgencyInfo?.color }}
                 >
-                  <option value="low">🟢 Low Priority</option>
-                  <option value="medium">🟡 Medium Priority</option>
-                  <option value="high">🔴 High Priority</option>
-                </select>
+                  <span className="font-bold uppercase tracking-wide">{issue.urgency}</span>
+                </div>
               </div>
               <div>
                 <p className="text-xs text-[var(--color-text-muted)] mb-1">Assigned Date</p>
@@ -276,8 +273,8 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
                 return (
                   <div key={step.key} className="relative flex flex-col items-center text-center flex-1 z-10">
                     <div className={`w-3.5 h-3.5 rounded-full mb-2 transition-colors z-10 ${
-                      isCurrent ? 'bg-[var(--color-accent-blue)] shadow-[0_0_10px_rgba(59,130,246,0.6)]' :
-                      isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border-2 border-[var(--color-border-subtle)]'
+                      isCurrent ? 'border-2 border-yellow-400 bg-yellow-400/20 shadow-[0_0_10px_rgba(250,204,21,0.6)]' :
+                      isCompleted ? 'bg-[var(--color-accent-green)] border border-[var(--color-accent-green)]' : 'bg-transparent border-2 border-[var(--color-border-subtle)]'
                     }`} />
                     <p className={`text-xs px-1 ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
                       {step.label}

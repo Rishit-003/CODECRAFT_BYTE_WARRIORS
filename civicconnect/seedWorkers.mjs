@@ -34,6 +34,10 @@ async function seed() {
     for (let j = 0; j < 2; j++) {
       const name = names[i][j];
       const id = `mock_worker_${dept}_${j}`;
+      const state = 'California';
+      const city = j === 0 ? 'San Francisco' : 'Los Angeles';
+      const assignedZone = j === 0 ? 'Zone A - Downtown' : 'Zone D - Westside';
+
       await setDoc(doc(db, 'users', id), {
         id,
         firebaseUid: id,
@@ -42,8 +46,10 @@ async function seed() {
         role: 'worker',
         department: dept,
         designation: 'Inspector',
-        employeeId: `EMP-${dept.slice(0,3).toUpperCase()}-${j}`,
-        assignedZone: 'Zone A - Downtown',
+        employeeId: `EMP-${dept.substring(0, 3).toUpperCase()}-${j + 1}00`,
+        state,
+        city,
+        assignedZone,
         contactNumber: '555-0000',
         isActive: true,
         tasksCompleted: 0,

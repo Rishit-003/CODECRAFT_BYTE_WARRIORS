@@ -71,6 +71,8 @@ export interface WorkerUser extends BaseUser {
   department: Department;
   designation: string;
   employeeId: string;
+  state: string;
+  city: string;
   assignedZone: string;
   contactNumber: string;
   isActive: boolean;
@@ -93,6 +95,9 @@ export interface GeoLocation {
   type: 'Point';
   coordinates: [number, number]; // [longitude, latitude]
   address: string;
+  state?: string;
+  city?: string;
+  zone?: string;
 }
 
 export interface Issue {
@@ -191,6 +196,8 @@ export interface WorkerSignupForm {
   department: Department;
   designation: string;
   employeeId: string;
+  state: string;
+  city: string;
   assignedZone: string;
   contactNumber: string;
 }

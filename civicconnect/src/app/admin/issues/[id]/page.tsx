@@ -158,9 +158,9 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   const categoryInfo = CATEGORY_CONFIG[issue.category];
   const deptInfo = DEPARTMENTS[issue.department];
   
-  // Available inspectors (filter by the issue's department AND apply priority limits)
+  // Available inspectors (filter by the issue's department, city AND apply priority limits)
   const inspectorsWithWorkload = workers
-    .filter(w => w.department === issue.department)
+    .filter(w => w.department === issue.department && (!issue.location.city || w.city === issue.location.city))
     .map(w => {
       const activeTasksList = allIssues.filter(i => 
         i.assignedTo === w.id && 
@@ -245,74 +245,10 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* LEFT COL: Processing Info & Timeline */}
-        <div className="space-y-6">
-          <div className="glass-card-static p-6">
-            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Processing & Assignment</h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-[var(--color-text-muted)] mb-1">Department</p>
-                <p className="text-sm flex items-center gap-2">
-                  <span style={{ color: deptInfo?.color }}>{deptInfo?.icon}</span> {deptInfo?.label}
-                </p>
-              </div>
-              
-              <div>
-                <p className="text-xs text-[var(--color-text-muted)] mb-1">Assigned Inspector</p>
-                {issue.assignedTo ? (
-                  <div className="flex items-center gap-2 text-sm bg-white/5 p-2 rounded-lg border border-[var(--color-border-glass)]">
-                    <div className="w-6 h-6 rounded-full bg-[var(--color-accent-amber)]/20 text-[var(--color-accent-amber)] flex items-center justify-center font-bold text-xs">
-                      {issue.assignedWorkerName?.[0]}
-                    </div>
-                    <span className="font-medium text-[var(--color-accent-blue)]">{issue.assignedWorkerName}</span>
-                  </div>
-                ) : (
-                  <span className="text-sm text-red-400 flex items-center gap-1"><AlertTriangle size={14}/> Unassigned</span>
-                )}
-              </div>
-
-              {/* Assignment Form */}
-              {['reported', 'reopened'].includes(issue.status) || true ? (
-                <div className="pt-4 mt-2 border-t border-[var(--color-border-glass)]">
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2">
-                    {issue.assignedTo ? 'Reassign Inspector:' : 'Assign Inspector:'}
-                  </p>
-                  <p className="text-xs text-[var(--color-text-muted)] mb-2 mt-4">
-                    Target Completion:
-                  </p>
-                  <input type="datetime-local" className="input-field py-2 text-sm w-full mb-4" value={targetCompletionDate} onChange={(e) => setTargetCompletionDate(e.target.value)} />
-                  <div className="flex gap-2">
-                    <select 
-                      value={selectedWorkerId}
-                      onChange={(e) => setSelectedWorkerId(e.target.value)}
-                      className="input-field py-2 text-sm flex-1"
-                    >
-                      <option value="">Select inspector...</option>
-                      {availableInspectors.length === 0 && <option disabled>No available inspectors</option>}
-                      {availableInspectors.map(w => (
-                        <option key={w.id} value={w.id}>{w.name} - {w.assignedZone} (High: {w.highPriorityActive}/2, Med/Low: {w.medLowPriorityActive}/2)</option>
-                      ))}
-                    </select>
-                    <button 
-                      onClick={handleAssign}
-                      disabled={!selectedWorkerId || assigning}
-                      className="btn-primary py-2 px-4 text-sm whitespace-nowrap"
-                    >
-                      Assign
-                    </button>
-                  </div>
-                  {availableInspectors.length === 0 && (
-                    <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
-                      *Inspectors from this department have reached their capacity for {issue.urgency} priority tasks.
-                    </p>
-                  )}
-                </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="glass-card-static p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* LEFT COL: Status Timeline */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="glass-card-static p-6 h-full">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Status Timeline</h3>
             <div className="border-l-2 border-[var(--color-border-subtle)] ml-2 space-y-6 relative">
               {steps.map((step, idx) => {
@@ -321,9 +257,9 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
                 
                 return (
                   <div key={step.key} className="relative pl-6">
-                    <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full transition-colors ${
-                      isCurrent ? 'bg-[var(--color-accent-blue)] shadow-[0_0_10px_rgba(59,130,246,0.6)]' :
-                      isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)]'
+                    <div className={`absolute -left-[6px] top-1 w-3 h-3 rounded-full transition-colors ${
+                      isCurrent ? 'border-2 border-yellow-400 bg-yellow-400/20 shadow-[0_0_10px_rgba(250,204,21,0.6)]' :
+                      isCompleted ? 'bg-[var(--color-accent-green)] border border-[var(--color-accent-green)]' : 'bg-transparent border-2 border-[var(--color-border-subtle)]'
                     }`} />
                     <p className={`text-sm ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
                       {step.label}
@@ -338,8 +274,8 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {/* RIGHT COL: Main Info */}
-        <div className="md:col-span-2 space-y-6">
+        {/* RIGHT COL: Main Info & Processing */}
+        <div className="lg:col-span-3 space-y-6">
           <div className="glass-card-static p-6">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Report Information</h3>
             
@@ -432,6 +368,71 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
                <p className="text-sm">{issue.rejectionReason}</p>
              </div>
           )}
+
+          {/* Processing & Assignment */}
+          <div className="glass-card-static p-6">
+            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Processing & Assignment</h3>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">Department</p>
+                <p className="text-sm flex items-center gap-2">
+                  <span style={{ color: deptInfo?.color }}>{deptInfo?.icon}</span> {deptInfo?.label}
+                </p>
+              </div>
+              
+              <div>
+                <p className="text-xs text-[var(--color-text-muted)] mb-1">Assigned Inspector</p>
+                {issue.assignedTo ? (
+                  <div className="flex items-center gap-2 text-sm bg-white/5 p-2 rounded-lg border border-[var(--color-border-glass)]">
+                    <div className="w-6 h-6 rounded-full bg-[var(--color-accent-amber)]/20 text-[var(--color-accent-amber)] flex items-center justify-center font-bold text-xs">
+                      {issue.assignedWorkerName?.[0]}
+                    </div>
+                    <span className="font-medium text-[var(--color-accent-blue)]">{issue.assignedWorkerName}</span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-red-400 flex items-center gap-1"><AlertTriangle size={14}/> Unassigned</span>
+                )}
+              </div>
+
+              {/* Assignment Form */}
+              {['reported', 'reopened'].includes(issue.status) ? (
+                <div className="pt-4 mt-2 border-t border-[var(--color-border-glass)]">
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2">
+                    {issue.assignedTo ? 'Reassign Inspector:' : 'Assign Inspector:'}
+                  </p>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2 mt-4">
+                    Target Completion:
+                  </p>
+                  <input type="datetime-local" className="input-field py-2 text-sm w-full mb-4" value={targetCompletionDate} onChange={(e) => setTargetCompletionDate(e.target.value)} />
+                  <div className="flex gap-2">
+                    <select 
+                      value={selectedWorkerId}
+                      onChange={(e) => setSelectedWorkerId(e.target.value)}
+                      className="input-field py-2 text-sm flex-1"
+                    >
+                      <option value="">Select inspector...</option>
+                      {availableInspectors.length === 0 && <option disabled>No available inspectors</option>}
+                      {availableInspectors.map(w => (
+                        <option key={w.id} value={w.id}>{w.name} - {w.assignedZone} (High: {w.highPriorityActive}/2, Med/Low: {w.medLowPriorityActive}/2)</option>
+                      ))}
+                    </select>
+                    <button 
+                      onClick={handleAssign}
+                      disabled={!selectedWorkerId || assigning}
+                      className="btn-primary py-2 px-4 text-sm whitespace-nowrap"
+                    >
+                      Assign
+                    </button>
+                  </div>
+                  {availableInspectors.length === 0 && (
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+                      *Inspectors from this department have reached their capacity for {issue.urgency} priority tasks.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
 

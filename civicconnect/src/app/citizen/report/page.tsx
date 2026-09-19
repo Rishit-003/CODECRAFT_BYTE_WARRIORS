@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { IssueCategory, UrgencyLevel } from '@/types';
-import { CATEGORY_CONFIG, URGENCY_CONFIG, DEPARTMENTS } from '@/constants';
+import { CATEGORY_CONFIG, URGENCY_CONFIG, DEPARTMENTS, ZONES } from '@/constants';
 import {
   Camera, MapPin, Send, ArrowLeft, Upload,
   AlertTriangle, Info,
@@ -31,6 +31,9 @@ export default function ReportIssuePage() {
     address: '',
     latitude: 12.9716,
     longitude: 77.5946,
+    state: '',
+    city: '',
+    zone: '',
   });
 
   const [analyzing, setAnalyzing] = useState(false);
@@ -126,6 +129,9 @@ export default function ReportIssuePage() {
             type: 'Point',
             coordinates: [form.longitude, form.latitude],
             address: form.address,
+            state: form.state,
+            city: form.city,
+            zone: form.zone,
           },
           photos: finalPhotoUrls,
           reportedBy: user.id,
@@ -265,9 +271,36 @@ export default function ReportIssuePage() {
             value={form.address}
             onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
             placeholder="Enter address manually"
-            className="input-field"
+            className="input-field mb-3"
             required
           />
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <input
+              type="text"
+              value={form.state}
+              onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
+              placeholder="State *"
+              className="input-field"
+              required
+            />
+            <input
+              type="text"
+              value={form.city}
+              onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+              placeholder="City *"
+              className="input-field"
+              required
+            />
+          </div>
+          <select
+            value={form.zone}
+            onChange={(e) => setForm((prev) => ({ ...prev, zone: e.target.value }))}
+            className="input-field w-full"
+            required
+          >
+            <option value="">Select Zone *</option>
+            {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+          </select>
           <p className="text-xs text-[var(--color-text-muted)] mt-2">
             📍 Coordinates: {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}
           </p>

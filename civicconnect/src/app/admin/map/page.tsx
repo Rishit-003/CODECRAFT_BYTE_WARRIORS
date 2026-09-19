@@ -58,59 +58,14 @@ export default function AdminMapPage() {
         ))}
       </div>
 
-      <div className="glass-card-static rounded-2xl overflow-hidden" style={{ height: '600px' }}>
-        <div className="relative w-full h-full" style={{ background: 'linear-gradient(135deg, #0c1230 0%, #0f1a3e 50%, #0a1025 100%)' }}>
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }} />
-
-          {!loading && filtered.map((issue) => {
-            const cat = CATEGORY_CONFIG[issue.category];
-            const urgency = URGENCY_CONFIG[issue.urgency];
-            const status = STATUS_CONFIG[issue.status];
-            const left = 10 + ((issue.location.coordinates[0] - 77.58) / 0.03) * 80;
-            const top = 10 + ((12.985 - issue.location.coordinates[1]) / 0.02) * 80;
-
-            return (
-              <button
-                key={issue.id}
-                onClick={() => setSelectedIssue(issue)}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-125 z-10"
-                style={{ left: `${Math.min(Math.max(left, 5), 95)}%`, top: `${Math.min(Math.max(top, 5), 95)}%` }}
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-lg" style={{
-                  background: issue.status === 'resolved' ? 'rgba(16,185,129,0.2)' : urgency.bgColor,
-                  border: `2px solid ${issue.status === 'resolved' ? 'var(--color-accent-green)' : urgency.color}`,
-                  opacity: issue.status === 'resolved' ? 0.6 : 1,
-                }}>
-                  {cat?.icon || '📋'}
-                </div>
-              </button>
-            );
-          })}
-
-          {loading && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-
-          {/* Legend */}
-          <div className="absolute bottom-4 left-4 p-3 rounded-xl text-xs space-y-2" style={{ background: 'rgba(10,14,39,0.9)', border: '1px solid var(--color-border-glass)' }}>
-            <p className="font-semibold text-[var(--color-text-secondary)]">Legend</p>
-            {Object.entries(URGENCY_CONFIG).map(([key, config]) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ background: config.color }} />
-                <span className="text-[var(--color-text-muted)]">{config.label} Urgency</span>
-              </div>
-            ))}
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full opacity-60" style={{ background: 'var(--color-accent-green)' }} />
-              <span className="text-[var(--color-text-muted)]">Resolved</span>
-            </div>
+      <div className="glass-card-static rounded-2xl overflow-hidden relative" style={{ height: '600px' }}>
+        {!loading ? (
+          <DynamicMap issues={filtered} />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-[var(--color-bg-tertiary)]">
+            <div className="w-10 h-10 border-3 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin" />
           </div>
-        </div>
+        )}
       </div>
 
       {/* Selected issue detail */}

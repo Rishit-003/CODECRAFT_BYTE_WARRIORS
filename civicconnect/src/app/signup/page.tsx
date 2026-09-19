@@ -4,7 +4,7 @@
 // CivicConnect — Signup Page (Multi-Step)
 // ============================================
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { UserRole, Department } from '@/types';
@@ -37,6 +37,8 @@ export default function SignupPage() {
     department: '' as Department | '',
     designation: '',
     employeeId: '',
+    state: '',
+    city: '',
     assignedZone: '',
     contactNumber: '',
     // Admin
@@ -91,6 +93,16 @@ export default function SignupPage() {
     if (!formData.department) return [];
     return DEPARTMENTS[formData.department as Department]?.roles || [];
   };
+
+  useEffect(() => {
+    if (selectedRole === 'worker' && formData.department && formData.designation) {
+      const prefix = formData.department.substring(0, 3).toUpperCase();
+      if (!formData.employeeId.startsWith(`EMP-${prefix}`)) {
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        updateForm('employeeId', `EMP-${prefix}-${rand}`);
+      }
+    }
+  }, [selectedRole, formData.department, formData.designation]);
 
   return (
     <div className="min-h-screen gradient-mesh flex items-center justify-center p-4">
@@ -264,7 +276,17 @@ export default function SignupPage() {
                     <label className="input-label">Employee ID *</label>
                     <div className="relative">
                       <Hash size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] pointer-events-none" />
-                      <input type="text" value={formData.employeeId} onChange={(e) => updateForm('employeeId', e.target.value)} placeholder="EMP-XXXX" className="input-field pl-11" style={{ paddingLeft: '44px' }} required />
+                      <input type="text" value={formData.employeeId} readOnly placeholder="Auto-generated after selecting role" className="input-field pl-11 bg-white/5 cursor-not-allowed opacity-80" style={{ paddingLeft: '44px' }} required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="input-label">State *</label>
+                      <input type="text" value={formData.state} onChange={(e) => updateForm('state', e.target.value)} placeholder="State" className="input-field" required />
+                    </div>
+                    <div>
+                      <label className="input-label">City *</label>
+                      <input type="text" value={formData.city} onChange={(e) => updateForm('city', e.target.value)} placeholder="City" className="input-field" required />
                     </div>
                   </div>
                   <div>
