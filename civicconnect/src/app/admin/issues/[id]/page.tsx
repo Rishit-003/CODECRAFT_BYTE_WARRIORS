@@ -156,11 +156,14 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   const statusInfo = STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG];
   const urgencyInfo = URGENCY_CONFIG[issue.urgency];
   const categoryInfo = CATEGORY_CONFIG[issue.category];
-  const deptInfo = DEPARTMENTS[issue.department];
+  const effectiveDepartment = (issue.department === 'other' || !issue.department || !DEPARTMENTS[issue.department as Department]) 
+    ? categoryInfo?.department 
+    : issue.department;
+  const deptInfo = DEPARTMENTS[effectiveDepartment as Department];
   
   // Available inspectors (filter by the issue's department, city AND apply priority limits)
   const inspectorsWithWorkload = workers
-    .filter(w => w.department === issue.department && (!issue.location.city || w.city === issue.location.city))
+    .filter(w => w.department === effectiveDepartment)
     .map(w => {
       const activeTasksList = allIssues.filter(i => 
         i.assignedTo === w.id && 
