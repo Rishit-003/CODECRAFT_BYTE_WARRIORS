@@ -47,11 +47,21 @@ export default function WorkerDashboard() {
   }
 
   // Stats
-  const totalAssigned = tasks.length;
-  const pendingInspection = tasks.filter(t => ['assigned', 'reopened'].includes(t.status)).length;
+  const activeWorks = tasks.filter(t => !['resolved', 'admin_review', 'closed', 'rejected'].includes(t.status));
+  const totalAssigned = activeWorks.length;
+  const pendingInspection = tasks.filter(t => ['assigned', 'accepted', 'reopened'].includes(t.status)).length;
   const inProgress = tasks.filter(t => ['inspection', 'in_progress'].includes(t.status)).length;
-  const resolved = tasks.filter(t => ['resolved', 'admin_review', 'closed'].includes(t.status)).length;
-  const overdue = 0; // Simple mockup
+  
+  const now = new Date().getTime();
+  const overdue = activeWorks.filter(t => {
+    if (!t.targetCompletionDate && !t.etaDate) return false;
+    return new Date(t.etaDate || t.targetCompletionDate!).getTime() < now;
+  }).length;
+  const dueSoon = activeWorks.filter(t => {
+    if (!t.targetCompletionDate && !t.etaDate) return false;
+    const target = new Date(t.etaDate || t.targetCompletionDate!).getTime();
+    return target >= now && (target - now) < 24 * 60 * 60 * 1000;
+  }).length;
 
   // Today's Assignments
   const todaysAssignments = tasks
@@ -71,30 +81,22 @@ export default function WorkerDashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          Inspector <span className="gradient-text">Dashboard</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Welcome back, {worker.name}. Here is your current workload.
-        </p>
-      </div>
 
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 stagger-children">
         <div className="glass-card-static p-4 flex flex-col justify-between h-[110px]">
            <div className="flex items-center justify-between">
-             <span className="text-xs font-medium text-[var(--color-text-secondary)]">Total Assigned</span>
+             <span className="text-xs font-medium text-[var(--color-text-secondary)]">Active Works</span>
              <ClipboardList size={18} className="text-blue-400 opacity-80" />
            </div>
-           <p className="text-3xl font-bold text-blue-400">{totalAssigned}</p>
+           <p className="text-3xl font-bold text-blue-400">{totalAssigned} <span className="text-lg text-[var(--color-text-muted)]">/ 4</span></p>
         </div>
         <div className="glass-card-static p-4 flex flex-col justify-between h-[110px]">
            <div className="flex items-center justify-between">
              <span className="text-xs font-medium text-[var(--color-text-secondary)]">Pending Inspection</span>
-             <AlertCircle size={18} className="text-amber-400 opacity-80" />
+             <AlertCircle size={18} className="text-[var(--color-accent-blue)] opacity-80" />
            </div>
-           <p className="text-3xl font-bold text-amber-400">{pendingInspection}</p>
+           <p className="text-3xl font-bold text-[var(--color-accent-blue)]">{pendingInspection}</p>
         </div>
         <div className="glass-card-static p-4 flex flex-col justify-between h-[110px]">
            <div className="flex items-center justify-between">
@@ -105,10 +107,10 @@ export default function WorkerDashboard() {
         </div>
         <div className="glass-card-static p-4 flex flex-col justify-between h-[110px]">
            <div className="flex items-center justify-between">
-             <span className="text-xs font-medium text-[var(--color-text-secondary)]">Resolved</span>
-             <CheckCircle2 size={18} className="text-emerald-400 opacity-80" />
+             <span className="text-xs font-medium text-[var(--color-text-secondary)]">Due Soon</span>
+             <AlertCircle size={18} className="text-amber-400 opacity-80" />
            </div>
-           <p className="text-3xl font-bold text-emerald-400">{resolved}</p>
+           <p className="text-3xl font-bold text-amber-400">{dueSoon}</p>
         </div>
         <div className="glass-card-static p-4 flex flex-col justify-between h-[110px]">
            <div className="flex items-center justify-between">
@@ -119,7 +121,7 @@ export default function WorkerDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* A. TODAY'S ASSIGNMENTS */}
         <div className="lg:col-span-2 glass-card-static flex flex-col">

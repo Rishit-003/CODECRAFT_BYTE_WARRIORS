@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -16,7 +16,9 @@ const firebaseConfig = {
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Cloud Firestore and get a reference to the service
-const db = getFirestore(app);
+const db = getApps().length > 0 
+  ? getFirestore(app) 
+  : initializeFirestore(app, { experimentalForceLongPolling: true });
 
 // Initialize Cloud Storage and get a reference to the service
 const storage = getStorage(app);

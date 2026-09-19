@@ -33,6 +33,10 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
   const [resolutionNotes, setResNotes] = useState('');
   const [resolutionPhoto, setResPhoto] = useState<string | null>(null);
 
+  // ETA State
+  const [etaDate, setEtaDate] = useState('');
+  const [etaReason, setEtaReason] = useState('');
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -47,6 +51,12 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
           setWorkPerformed(data.issue.workPerformed || '');
           setResNotes(data.issue.resolutionNotes || '');
           setResPhoto(data.issue.resolutionPhoto || null);
+          if (data.issue.etaDate) {
+            // format datetime-local
+            const d = new Date(data.issue.etaDate);
+            setEtaDate(new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16));
+          }
+          setEtaReason(data.issue.etaUpdateReason || '');
         }
         setLoading(false);
       })
@@ -135,10 +145,11 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
   // Steps for timeline
   const steps = [
     { key: 'assigned', label: 'Assigned', date: issue.assignedAt },
+    { key: 'accepted', label: 'Accepted', date: issue.acceptedAt },
     { key: 'inspection', label: 'Inspection Started', date: issue.inspectionStartedAt },
     { key: 'in_progress', label: 'Work Started', date: issue.workStartedAt },
     { key: 'resolved', label: 'Resolution Submitted', date: issue.resolvedAt },
-    { key: 'admin_review', label: 'Admin Review', date: null },
+    { key: 'admin_review', label: 'Admin Review', date: issue.status === 'admin_review' || issue.status === 'closed' ? issue.updatedAt : null },
     ...(issue.status === 'closed' ? [{ key: 'closed', label: 'Closed (Approved)', date: issue.updatedAt }] : []),
     ...(issue.status === 'reopened' || issue.rejectionReason ? [{ key: 'reopened', label: 'Reopened (Rejected)', date: issue.updatedAt }] : [])
   ];
@@ -176,21 +187,62 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
           {/* SECTION 2 - LOCATION */}
           <div className="glass-card-static p-6">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Location</h3>
-            <div className="p-3 rounded-lg bg-[var(--color-bg-tertiary)] flex items-start gap-3">
-              <MapPin size={18} className="text-[var(--color-accent-blue)] shrink-0 mt-0.5" />
-              <p className="text-sm">{issue.location.address}</p>
+            <div className="p-4 rounded-xl bg-[var(--color-bg-tertiary)] flex flex-col gap-3 min-h-[100px] justify-center border border-[var(--color-border-glass)]">
+              <div className="flex items-start gap-3 w-full overflow-hidden">
+                <MapPin size={18} className="text-[var(--color-accent-blue)] shrink-0 mt-0.5" />
+                <p className="text-sm break-all w-full">{issue.location.address}</p>
+              </div>
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${issue.location.coordinates[1]},${issue.location.coordinates[0]}`}
+                target="_blank" rel="noopener noreferrer"
+                className="btn-secondary py-2 w-full text-xs flex justify-center items-center gap-2 mt-2"
+              >
+                <MapPin size={14} /> Open in Google Maps
+              </a>
             </div>
           </div>
 
-          {/* SECTION 3 - ADMIN ASSIGNMENT */}
+          {/* SECTION 3 - ASSIGNMENT & PRIORITY */}
           <div className="glass-card-static p-6">
-            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Admin Assignment</h3>
+            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Update Priority & ETA</h3>
             <div className="space-y-4">
+              {issue.status === 'assigned' && (
+                <div className="pb-4 border-b border-[var(--color-border-glass)]">
+                  <button 
+                    onClick={() => updateIssue({ status: 'accepted', acceptedAt: new Date().toISOString() }, 'Work Accepted')} 
+                    className="btn-primary w-full py-3 font-bold bg-purple-600 hover:bg-purple-500"
+                    disabled={saving}
+                  >
+                    Accept Work
+                  </button>
+                </div>
+              )}
+              {['accepted', 'inspection', 'in_progress'].includes(issue.status) && (
+                <div className="pb-4 border-b border-[var(--color-border-glass)]">
+                  <p className="text-xs text-[var(--color-text-muted)] mb-1">Estimated Completion Date (ETA)</p>
+                  <input type="datetime-local" value={etaDate} onChange={e => setEtaDate(e.target.value)} className="input-field w-full text-sm mb-2" />
+                  <p className="text-xs text-[var(--color-text-muted)] mb-1">Reason for ETA Change</p>
+                  <textarea value={etaReason} onChange={e => setEtaReason(e.target.value)} className="input-field w-full text-sm min-h-[60px] mb-2" placeholder="Required if updating ETA..." />
+                  <button 
+                    onClick={() => updateIssue({ etaDate: new Date(etaDate).toISOString(), etaUpdateReason: etaReason }, 'ETA Updated')} 
+                    className="btn-secondary w-full py-2 text-xs"
+                    disabled={saving || !etaDate}
+                  >
+                    Update ETA
+                  </button>
+                </div>
+              )}
               <div>
                 <p className="text-xs text-[var(--color-text-muted)] mb-1">Priority</p>
-                <span className="badge text-xs" style={{ background: urgencyInfo?.bgColor, color: urgencyInfo?.color }}>
-                  {urgencyInfo?.icon} {urgencyInfo?.label}
-                </span>
+                <select 
+                  value={issue.urgency}
+                  onChange={(e) => updateIssue({ urgency: e.target.value as any }, 'Priority updated')}
+                  className="input-field w-full text-sm"
+                >
+                  <option value="low">🟢 Low Priority</option>
+                  <option value="medium">🟡 Medium Priority</option>
+                  <option value="high">🔴 High Priority</option>
+                </select>
               </div>
               <div>
                 <p className="text-xs text-[var(--color-text-muted)] mb-1">Assigned Date</p>
@@ -206,24 +258,31 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
             </div>
           </div>
 
-          {/* TIMELINE */}
+          {/* TIMELINE (Moved to right column and made horizontal) */}
+        </div>
+
+        {/* RIGHT COLUMN */}
+        <div className="md:col-span-2 space-y-6">
           <div className="glass-card-static p-6">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Timeline</h3>
-            <div className="border-l-2 border-[var(--color-border-subtle)] ml-2 space-y-5 relative">
+            <div className="relative flex justify-between items-start mt-8 mb-4">
+              {/* Horizontal Line Background */}
+              <div className="absolute top-[6px] left-[10%] right-[10%] h-[2px] bg-[var(--color-border-subtle)] z-0" />
+              
               {steps.map((step, idx) => {
                 const isCompleted = idx <= currentStepIdx;
                 const isCurrent = idx === currentStepIdx;
                 
                 return (
-                  <div key={step.key} className="relative pl-6">
-                    <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full transition-colors ${
+                  <div key={step.key} className="relative flex flex-col items-center text-center flex-1 z-10">
+                    <div className={`w-3.5 h-3.5 rounded-full mb-2 transition-colors z-10 ${
                       isCurrent ? 'bg-[var(--color-accent-blue)] shadow-[0_0_10px_rgba(59,130,246,0.6)]' :
-                      isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)]'
+                      isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border-2 border-[var(--color-border-subtle)]'
                     }`} />
-                    <p className={`text-sm ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
+                    <p className={`text-xs px-1 ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
                       {step.label}
                     </p>
-                    {step.date && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                    {step.date && <p className="text-[10px] text-[var(--color-text-muted)] mt-1">
                       {new Date(step.date).toLocaleDateString()}
                     </p>}
                   </div>
@@ -231,11 +290,7 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
               })}
             </div>
           </div>
-        </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="md:col-span-2 space-y-6">
-          
           {/* SECTION 1 - CITIZEN REPORT */}
           <div className="glass-card-static p-6">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Citizen Report</h3>
@@ -270,7 +325,7 @@ export default function WorkerComplaintDetailsPage({ params }: { params: Promise
           </div>
 
           {/* SECTION 4 - INSPECTION */}
-          {(['assigned', 'reopened'].includes(issue.status)) && (
+          {(['accepted', 'reopened'].includes(issue.status)) && (
             <div className="glass-card-static p-6 text-center border-2 border-dashed border-[var(--color-border-glass)]">
               <ClipboardCheck size={48} className="mx-auto mb-3 text-[var(--color-accent-blue)] opacity-80" />
               <h3 className="text-lg font-bold mb-2">Ready for Inspection</h3>

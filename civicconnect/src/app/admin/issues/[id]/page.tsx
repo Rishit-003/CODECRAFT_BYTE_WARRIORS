@@ -26,6 +26,7 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   // Assignment state
   const [assigning, setAssigning] = useState(false);
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
+  const [targetCompletionDate, setTargetCompletionDate] = useState('');
   
   // Rejection/Reopen state
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -33,20 +34,45 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   const [showReopenModal, setShowReopenModal] = useState(false);
   const [reopenReason, setReopenReason] = useState('');
 
+  const [allIssues, setAllIssues] = useState<Issue[]>([]);
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/issues/${id}`).then(r => r.json()),
-      fetch('/api/workers').then(r => r.json())
-    ]).then(([issueData, workersData]) => {
+      fetch('/api/workers').then(r => r.json()),
+      fetch('/api/issues').then(r => r.json())
+    ]).then(([issueData, workersData, allIssuesData]) => {
       if (issueData.issue) {
         setIssue(issueData.issue);
       }
       if (workersData.workers) {
         setWorkers(workersData.workers);
       }
+      if (allIssuesData.issues) {
+        setAllIssues(allIssuesData.issues);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  // Auto-calculate Target Completion Date when urgency changes (only before assignment)
+  useEffect(() => {
+    if (issue && ['reported', 'reopened'].includes(issue.status)) {
+      const now = new Date();
+      let addDays = 3;
+      if (issue.urgency === 'high') addDays = 1;
+      else if (issue.urgency === 'medium') addDays = 2;
+      
+      now.setDate(now.getDate() + addDays);
+      const tzOffset = now.getTimezoneOffset() * 60000;
+      setTargetCompletionDate(new Date(now.getTime() - tzOffset).toISOString().slice(0, 16));
+    } else if (issue?.targetCompletionDate && !targetCompletionDate) {
+      // Show existing target date if already assigned
+      const d = new Date(issue.targetCompletionDate);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      setTargetCompletionDate(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+    }
+  }, [issue?.urgency, issue?.status, issue?.targetCompletionDate, issue?.id]);
 
   const updateIssue = async (updates: Partial<Issue>, successMessage: string) => {
     try {
@@ -58,6 +84,10 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
       if (res.ok) {
         const data = await res.json();
         setIssue(data.issue);
+        
+        // Also update in allIssues so local active task counts refresh
+        setAllIssues(prev => prev.map(i => i.id === data.issue.id ? data.issue : i));
+        
         toast.success(successMessage);
         return true;
       } else {
@@ -85,6 +115,7 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
       assignedTo: worker.id,
       assignedWorkerName: worker.name,
       assignedAt: new Date().toISOString(),
+      targetCompletionDate: targetCompletionDate ? new Date(targetCompletionDate).toISOString() : undefined,
       status: 'assigned'
     }, `Assigned to ${worker.name}`);
     setAssigning(false);
@@ -127,22 +158,55 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   const categoryInfo = CATEGORY_CONFIG[issue.category];
   const deptInfo = DEPARTMENTS[issue.department];
   
-  // Available inspectors (same department)
-  const availableInspectors = workers.filter(w => w.department === issue.department && w.isActive);
+  // Available inspectors (filter by the issue's department AND apply priority limits)
+  const inspectorsWithWorkload = workers
+    .filter(w => w.department === issue.department)
+    .map(w => {
+      const activeTasksList = allIssues.filter(i => 
+        i.assignedTo === w.id && 
+        !['resolved', 'admin_review', 'closed', 'rejected'].includes(i.status)
+      );
+      
+      const highPriorityActive = activeTasksList.filter(i => i.urgency === 'high').length;
+      const medLowPriorityActive = activeTasksList.filter(i => i.urgency !== 'high').length;
+      
+      return { ...w, highPriorityActive, medLowPriorityActive, totalActive: activeTasksList.length };
+    });
+    
+  const availableInspectors = inspectorsWithWorkload.filter(w => {
+    if (issue.urgency === 'high') {
+      return w.highPriorityActive < 2;
+    } else {
+      return w.medLowPriorityActive < 2;
+    }
+  });
 
   // Timeline steps
   const steps = [
     { key: 'reported', label: 'Reported', date: issue.createdAt },
     { key: 'assigned', label: 'Assigned', date: issue.assignedAt },
-    { key: 'inspection', label: 'Inspection', date: null },
-    { key: 'in_progress', label: 'In Progress', date: null },
-    { key: 'resolved', label: 'Resolved', date: issue.resolvedAt },
-    { key: 'admin_review', label: 'Admin Review', date: issue.status === 'admin_review' ? new Date().toISOString() : null },
-    { key: 'closed', label: 'Closed', date: issue.status === 'closed' ? new Date().toISOString() : null },
+    { key: 'accepted', label: 'Accepted', date: issue.acceptedAt },
+    { key: 'inspection', label: 'Inspection', date: issue.inspectionStartedAt },
+    { key: 'in_progress', label: 'Work Started', date: issue.workStartedAt },
+    { key: 'resolved', label: 'Completed', date: issue.resolvedAt },
+    { key: 'admin_review', label: 'Admin Review', date: issue.status === 'admin_review' ? issue.updatedAt : null },
+    { key: 'closed', label: 'Closed', date: issue.status === 'closed' ? issue.updatedAt : null },
   ];
   
   let currentStepIdx = steps.findIndex(s => s.key === issue.status);
   if (currentStepIdx === -1) currentStepIdx = 0; // Fallback
+
+  // Status Calculation
+  let workloadStatus: { label: string, color: string } | null = null;
+  if (issue.targetCompletionDate && !['resolved', 'admin_review', 'closed'].includes(issue.status)) {
+    const target = new Date(issue.etaDate || issue.targetCompletionDate).getTime();
+    const now = new Date().getTime();
+    const hoursLeft = (target - now) / (1000 * 60 * 60);
+    
+    if (hoursLeft < 0) workloadStatus = { label: 'Overdue', color: '#ef4444' };
+    else if (hoursLeft < 24) workloadStatus = { label: 'Due Soon', color: '#f59e0b' };
+    else workloadStatus = { label: 'On Track', color: '#10b981' };
+  }
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
@@ -157,6 +221,11 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
             <span className="badge" style={{ background: statusInfo?.bgColor, color: statusInfo?.color }}>
               {statusInfo?.label || issue.status}
             </span>
+            {workloadStatus && (
+              <span className="badge" style={{ background: `${workloadStatus.color}20`, color: workloadStatus.color, border: `1px solid ${workloadStatus.color}40` }}>
+                <Clock size={12} className="inline mr-1" /> {workloadStatus.label}
+              </span>
+            )}
           </div>
           <p className="text-sm font-mono text-[var(--color-text-muted)]">ID: {issue.id}</p>
         </div>
@@ -177,35 +246,8 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* LEFT COL: Timeline & Processing Info */}
+        {/* LEFT COL: Processing Info & Timeline */}
         <div className="space-y-6">
-          <div className="glass-card-static p-6">
-            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Status Timeline</h3>
-            <div className="relative pl-4 space-y-6 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-              <div className="border-l-2 border-[var(--color-border-subtle)] ml-2 space-y-6 relative">
-                {steps.map((step, idx) => {
-                  const isCompleted = idx <= currentStepIdx;
-                  const isCurrent = idx === currentStepIdx;
-                  
-                  return (
-                    <div key={step.key} className="relative pl-6">
-                      <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full transition-colors ${
-                        isCurrent ? 'bg-[var(--color-accent-blue)] shadow-[0_0_10px_rgba(59,130,246,0.6)]' :
-                        isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)]'
-                      }`} />
-                      <p className={`text-sm ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
-                        {step.label}
-                      </p>
-                      {step.date && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
-                        {new Date(step.date).toLocaleDateString()}
-                      </p>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
           <div className="glass-card-static p-6">
             <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Processing & Assignment</h3>
             <div className="space-y-4">
@@ -236,6 +278,10 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
                   <p className="text-xs text-[var(--color-text-muted)] mb-2">
                     {issue.assignedTo ? 'Reassign Inspector:' : 'Assign Inspector:'}
                   </p>
+                  <p className="text-xs text-[var(--color-text-muted)] mb-2 mt-4">
+                    Target Completion:
+                  </p>
+                  <input type="datetime-local" className="input-field py-2 text-sm w-full mb-4" value={targetCompletionDate} onChange={(e) => setTargetCompletionDate(e.target.value)} />
                   <div className="flex gap-2">
                     <select 
                       value={selectedWorkerId}
@@ -243,8 +289,9 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
                       className="input-field py-2 text-sm flex-1"
                     >
                       <option value="">Select inspector...</option>
+                      {availableInspectors.length === 0 && <option disabled>No available inspectors</option>}
                       {availableInspectors.map(w => (
-                        <option key={w.id} value={w.id}>{w.name} - {w.assignedZone}</option>
+                        <option key={w.id} value={w.id}>{w.name} - {w.assignedZone} (High: {w.highPriorityActive}/2, Med/Low: {w.medLowPriorityActive}/2)</option>
                       ))}
                     </select>
                     <button 
@@ -255,8 +302,38 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
                       Assign
                     </button>
                   </div>
+                  {availableInspectors.length === 0 && (
+                    <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+                      *Inspectors from this department have reached their capacity for {issue.urgency} priority tasks.
+                    </p>
+                  )}
                 </div>
               ) : null}
+            </div>
+          </div>
+
+          <div className="glass-card-static p-6">
+            <h3 className="text-sm font-semibold mb-4 uppercase tracking-wider text-[var(--color-text-muted)]">Status Timeline</h3>
+            <div className="border-l-2 border-[var(--color-border-subtle)] ml-2 space-y-6 relative">
+              {steps.map((step, idx) => {
+                const isCompleted = idx <= currentStepIdx;
+                const isCurrent = idx === currentStepIdx;
+                
+                return (
+                  <div key={step.key} className="relative pl-6">
+                    <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full transition-colors ${
+                      isCurrent ? 'bg-[var(--color-accent-blue)] shadow-[0_0_10px_rgba(59,130,246,0.6)]' :
+                      isCompleted ? 'bg-[var(--color-accent-green)]' : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)]'
+                    }`} />
+                    <p className={`text-sm ${isCurrent ? 'font-bold text-white' : isCompleted ? 'font-medium text-[var(--color-text-secondary)]' : 'text-[var(--color-text-muted)]'}`}>
+                      {step.label}
+                    </p>
+                    {step.date && <p className="text-xs text-[var(--color-text-muted)] mt-0.5">
+                      {new Date(step.date).toLocaleDateString()}
+                    </p>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

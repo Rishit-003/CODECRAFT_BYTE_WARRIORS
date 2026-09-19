@@ -98,14 +98,6 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          Analytics & <span className="gradient-text">Reports</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Detailed metrics and performance data across the city.
-        </p>
-      </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

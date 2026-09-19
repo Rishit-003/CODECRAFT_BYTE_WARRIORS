@@ -48,14 +48,6 @@ export default function AdminWorkersPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          Field <span className="gradient-text">Inspectors</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          {workers.length} total inspectors • {activeCount} active
-        </p>
-      </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger-children">

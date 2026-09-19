@@ -57,14 +57,6 @@ export default function AdminIssuesPage() {
 
   return (
     <div className="space-y-6 animate-fade-in flex flex-col h-full">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          All <span className="gradient-text">Complaints</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Comprehensive view of all civic complaints across the city.
-        </p>
-      </div>
 
       {/* Filters Bar */}
       <div className="glass-card-static p-4 flex flex-wrap items-center gap-4">
@@ -133,107 +125,98 @@ export default function AdminIssuesPage() {
         <p>Showing {filtered.length} complaints</p>
       </div>
 
-      {/* Table */}
-      <div className="glass-card-static flex-1 overflow-hidden flex flex-col">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left text-sm whitespace-nowrap">
-            <thead className="text-[var(--color-text-muted)] border-b border-[var(--color-border-glass)] sticky top-0 bg-[rgba(20,24,54,0.95)] backdrop-blur-md z-10">
-              <tr>
-                <th className="p-4 font-medium">ID</th>
-                <th className="p-4 font-medium">Category & Title</th>
-                <th className="p-4 font-medium">Location</th>
-                <th className="p-4 font-medium">Citizen</th>
-                <th className="p-4 font-medium">Date Reported</th>
-                <th className="p-4 font-medium">Priority</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium">Inspector</th>
-                <th className="p-4 font-medium text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border-glass)]">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="p-8 text-center">
-                    <div className="inline-block w-6 h-6 border-2 border-[var(--color-accent-blue)] border-t-transparent rounded-full animate-spin mb-2" />
-                    <p className="text-[var(--color-text-muted)] text-sm">Loading complaints...</p>
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="p-12 text-center text-[var(--color-text-muted)]">
-                    <Filter size={32} className="mx-auto mb-3 opacity-20" />
-                    <p>No complaints match your filters.</p>
-                    <button 
-                      onClick={() => {
-                        setSearch(''); setStatusFilter('all'); setCategoryFilter('all'); 
-                        setPriorityFilter('all'); setAssignedFilter('all');
-                      }}
-                      className="mt-4 text-[var(--color-accent-blue)] hover:underline"
-                    >
-                      Clear all filters
-                    </button>
-                  </td>
-                </tr>
-              ) : (
-                filtered.map(issue => (
-                  <tr key={issue.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-mono text-xs text-[var(--color-text-secondary)]">{issue.id.slice(0, 8)}</td>
-                    <td className="p-4">
-                      <p className="font-medium">{issue.title}</p>
-                      <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 mt-1">
-                        {CATEGORY_CONFIG[issue.category]?.icon} {CATEGORY_CONFIG[issue.category]?.label}
-                      </p>
-                    </td>
-                    <td className="p-4 max-w-[150px] truncate">
-                      <span className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)]" title={issue.location.address}>
-                        <MapPin size={12} className="shrink-0" />
-                        <span className="truncate">{issue.location.address}</span>
-                      </span>
-                    </td>
-                    <td className="p-4 text-xs">{issue.reporterName}</td>
-                    <td className="p-4 text-xs text-[var(--color-text-secondary)]">
-                      {new Date(issue.createdAt).toLocaleDateString('en-IN', {
-                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                      })}
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider`}
-                            style={{ background: URGENCY_CONFIG[issue.urgency]?.bgColor, color: URGENCY_CONFIG[issue.urgency]?.color }}>
-                        {issue.urgency}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide`}
-                            style={{ background: STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.bgColor, color: STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.color }}>
-                        {STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG]?.label || issue.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-xs text-[var(--color-text-secondary)]">
-                      {issue.assignedWorkerName ? (
-                         <span className="flex items-center gap-1">
-                           <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-amber)]" />
-                           {issue.assignedWorkerName}
-                         </span>
-                      ) : (
-                        <span className="text-[var(--color-text-muted)] italic">Unassigned</span>
-                      )}
-                    </td>
-                    <td className="p-4 text-right">
-                      <Link 
-                        href={`/admin/issues/${issue.id}`} 
-                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[var(--color-accent-blue)] transition-colors"
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Cards Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="h-64 rounded-2xl animate-pulse" style={{ background: 'var(--color-bg-tertiary)' }} />
+          ))}
         </div>
-      </div>
+      ) : filtered.length === 0 ? (
+        <div className="glass-card-static p-12 text-center text-[var(--color-text-muted)] flex flex-col items-center justify-center flex-1">
+          <Filter size={48} className="mb-4 opacity-20" />
+          <p className="text-lg font-medium text-white mb-2">No complaints found</p>
+          <p>No complaints match your current filters.</p>
+          <button 
+            onClick={() => {
+              setSearch(''); setStatusFilter('all'); setCategoryFilter('all'); 
+              setPriorityFilter('all'); setAssignedFilter('all');
+            }}
+            className="mt-6 btn-primary py-2 px-6"
+          >
+            Clear all filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
+          {filtered.map(issue => {
+            const urgency = URGENCY_CONFIG[issue.urgency];
+            const status = STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG];
+            const category = CATEGORY_CONFIG[issue.category];
+
+            return (
+              <div key={issue.id} className="glass-card-static rounded-2xl overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-lg transition-all duration-300 border border-[var(--color-border-glass)] group">
+                <div className="p-5 flex-1 flex flex-col">
+                  {/* Header */}
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="badge font-bold tracking-wider" style={{ background: status?.bgColor, color: status?.color }}>
+                      {status?.label || issue.status}
+                    </span>
+                    <span className="text-xs font-mono text-[var(--color-text-muted)]">#{issue.id.slice(0, 8)}</span>
+                  </div>
+
+                  {/* Title & Category */}
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="text-2xl mt-1 shrink-0">{category?.icon || '📋'}</div>
+                    <div>
+                      <h3 className="font-bold text-base leading-tight group-hover:text-[var(--color-accent-blue)] transition-colors line-clamp-2">{issue.title}</h3>
+                      <p className="text-xs text-[var(--color-text-muted)] mt-1">{category?.label}</p>
+                    </div>
+                  </div>
+
+                  {/* Meta Details */}
+                  <div className="space-y-2 mb-6 flex-1">
+                    <div className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+                      <MapPin size={14} className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
+                      <span className="line-clamp-2">{issue.location.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
+                      <span className="text-[var(--color-text-muted)]">By:</span>
+                      <span className="font-medium text-white">{issue.reporterName}</span>
+                      <span className="text-[var(--color-text-muted)] px-1">•</span>
+                      <span>{new Date(issue.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                    </div>
+                  </div>
+
+                  {/* Footer & Actions */}
+                  <div className="pt-4 border-t border-[var(--color-border-glass)] flex items-center justify-between mt-auto">
+                    <div className="flex flex-col gap-1">
+                      <span className="badge text-[10px]" style={{ background: urgency?.bgColor, color: urgency?.color }}>
+                        {urgency?.icon} {urgency?.label} Priority
+                      </span>
+                      {issue.assignedWorkerName ? (
+                        <span className="text-xs text-[var(--color-text-muted)] flex items-center gap-1 mt-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent-amber)]" />
+                          {issue.assignedWorkerName}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--color-text-muted)] italic mt-1">Unassigned</span>
+                      )}
+                    </div>
+                    <Link 
+                      href={`/admin/issues/${issue.id}`} 
+                      className="inline-flex items-center justify-center p-3 rounded-xl bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-accent-blue)] text-[var(--color-text-secondary)] hover:text-white transition-all group-hover:shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                      title="View Details"
+                    >
+                      <Eye size={18} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

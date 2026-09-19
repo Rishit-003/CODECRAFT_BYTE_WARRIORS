@@ -17,14 +17,6 @@ export default function WorkerProfilePage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          Inspector <span className="gradient-text">Profile</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          View your profile and account information.
-        </p>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         

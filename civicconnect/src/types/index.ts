@@ -32,6 +32,7 @@ export type IssueStatus =
   | 'reported'
   | 'acknowledged'
   | 'assigned'
+  | 'accepted'
   | 'inspection'
   | 'in_progress'
   | 'resolved'
@@ -109,6 +110,10 @@ export interface Issue {
   assignedTo?: string; // Worker User ID
   assignedWorkerName?: string;
   assignedAt?: string;
+  acceptedAt?: string;
+  targetCompletionDate?: string;
+  etaDate?: string;
+  etaUpdateReason?: string;
   rejectionReason?: string;
   reopenedReason?: string;
   upvotes: string[]; // Array of User IDs

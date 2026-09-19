@@ -105,14 +105,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display">
-          Admin <span className="gradient-text">Dashboard</span>
-        </h1>
-        <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-          Monitor complaints, assign inspectors, and track resolutions.
-        </p>
-      </div>
 
       {/* 1. SUMMARY CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
@@ -173,7 +165,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* 3. LISTS ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Recent Complaints */}
         <div className="lg:col-span-2 glass-card-static p-6 flex flex-col">

@@ -158,6 +158,12 @@ export const STATUS_CONFIG: Record<IssueStatus, {
     bgColor: 'rgba(139, 92, 246, 0.15)',
     step: 2,
   },
+  accepted: {
+    label: 'Accepted',
+    color: '#a855f7',
+    bgColor: 'rgba(168, 85, 247, 0.15)',
+    step: 2.5,
+  },
   inspection: {
     label: 'Inspection',
     color: '#6366f1',
@@ -257,6 +263,7 @@ export const STATUS_PIPELINE: IssueStatus[] = [
   'reported',
   'acknowledged',
   'assigned',
+  'accepted',
   'inspection',
   'in_progress',
   'resolved',

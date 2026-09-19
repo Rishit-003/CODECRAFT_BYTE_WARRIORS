@@ -28,14 +28,12 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: 'My Reports', href: '/citizen/track', icon: <FileText size={20} /> },
     { label: 'Community Map', href: '/citizen/map', icon: <MapPin size={20} /> },
     { label: 'Notifications', href: '/citizen/notifications', icon: <Bell size={20} /> },
-    { label: 'Profile', href: '/citizen/profile', icon: <User size={20} /> },
   ],
   worker: [
     { label: 'Dashboard', href: '/worker', icon: <LayoutDashboard size={20} /> },
     { label: 'My Complaints', href: '/worker/issues', icon: <ClipboardList size={20} /> },
     { label: 'Map', href: '/worker/map', icon: <MapPin size={20} /> },
     { label: 'Notifications', href: '/worker/notifications', icon: <Bell size={20} /> },
-    { label: 'Profile', href: '/worker/profile', icon: <User size={20} /> },
   ],
   admin: [
     { label: 'Dashboard', href: '/admin', icon: <LayoutDashboard size={20} /> },
@@ -57,6 +55,34 @@ const ROLE_LABELS: Record<UserRole, string> = {
   citizen: 'Citizen',
   worker: 'Worker',
   admin: 'Administrator',
+};
+
+const getPageTitle = (pathname: string) => {
+  if (pathname.includes('/issues/')) return { prefix: 'Complaint', suffix: 'Details', desc: 'Review and update complaint details.' };
+  
+  const map: Record<string, { prefix: string, suffix: string, desc: string }> = {
+    '/citizen': { prefix: 'Citizen', suffix: 'Dashboard', desc: 'Monitor community updates and your recent activities.' },
+    '/citizen/report': { prefix: 'Report', suffix: 'Issue', desc: 'Submit a new complaint for your community.' },
+    '/citizen/track': { prefix: 'My', suffix: 'Reports', desc: 'Track the status of your reported complaints.' },
+    '/citizen/map': { prefix: 'Community', suffix: 'Map', desc: 'View reported issues around your area.' },
+    '/citizen/notifications': { prefix: 'Your', suffix: 'Notifications', desc: 'View your alerts and updates.' },
+    '/citizen/profile': { prefix: 'Citizen', suffix: 'Profile', desc: 'Manage your account information.' },
+    
+    '/worker': { prefix: 'Inspector', suffix: 'Dashboard', desc: 'Here is your current workload.' },
+    '/worker/issues': { prefix: 'My', suffix: 'Complaints', desc: 'View and manage all complaints assigned to you.' },
+    '/worker/map': { prefix: 'Inspector', suffix: 'Map', desc: 'View your assigned complaints on the map.' },
+    '/worker/notifications': { prefix: 'Your', suffix: 'Notifications', desc: 'View your alerts and updates.' },
+    '/worker/profile': { prefix: 'Inspector', suffix: 'Profile', desc: 'View your profile and account information.' },
+    
+    '/admin': { prefix: 'Admin', suffix: 'Dashboard', desc: 'Monitor complaints, assign inspectors, and track resolutions.' },
+    '/admin/issues': { prefix: 'All', suffix: 'Complaints', desc: 'View and manage all system complaints.' },
+    '/admin/workers': { prefix: 'Manage', suffix: 'Inspectors', desc: 'Add and manage field workers.' },
+    '/admin/map': { prefix: 'Complaint', suffix: 'Map', desc: 'View all complaints on the interactive map.' },
+    '/admin/reports': { prefix: 'System', suffix: 'Reports', desc: 'Analytics and insights.' },
+    '/admin/notifications': { prefix: 'Your', suffix: 'Notifications', desc: 'View your alerts and updates.' },
+  };
+
+  return map[pathname] || { prefix: '', suffix: 'Dashboard', desc: '' };
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -171,13 +197,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="md:hidden flex items-center">
               <img src="/logo.png" alt="CivicConnect Logo" className="h-7 w-auto" />
             </div>
+            
+            <div className="hidden md:flex flex-col ml-1">
+              <h1 className="text-xl font-bold font-display leading-tight">
+                {getPageTitle(pathname).prefix} <span className="gradient-text">{getPageTitle(pathname).suffix}</span>
+              </h1>
+              <p className="text-[10px] text-[var(--color-text-secondary)] font-medium">
+                {getPageTitle(pathname).desc}
+              </p>
+            </div>
           </div>
 
-          <div className="hidden md:block">
-            <h2 className="text-lg font-semibold" style={{ fontFamily: 'var(--font-display)' }}>
-              {navItems.find((n) => n.href === pathname)?.label || 'Dashboard'}
-            </h2>
-          </div>
+
 
           <div className="flex items-center gap-4">
             <Link href={`/${user.role}/notifications`} className="relative p-2 rounded-xl transition-all hover:bg-white/5">
@@ -188,9 +219,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
               )}
             </Link>
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold md:hidden" style={{ background: `${roleColor}20`, color: roleColor }}>
+            <Link 
+              href={user.role === 'admin' ? '/admin' : `/${user.role}/profile`}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-transform hover:scale-105 cursor-pointer border border-[var(--color-border-glass)]" 
+              style={{ background: `${roleColor}20`, color: roleColor }}
+              title={user.role === 'admin' ? "Admin Dashboard" : "Go to Profile"}
+            >
               {user.name.charAt(0)}
-            </div>
+            </Link>
           </div>
         </header>
 
