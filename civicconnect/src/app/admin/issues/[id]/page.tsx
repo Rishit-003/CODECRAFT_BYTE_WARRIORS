@@ -245,6 +245,14 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
             <option value="medium">Medium</option>
             <option value="high">High</option>
           </select>
+          {issue.status !== 'closed' && (
+            <button 
+              onClick={() => updateIssue({ status: 'closed', resolutionNotes: 'Closed by Admin' }, 'Complaint forcefully closed by admin')}
+              className="btn-ghost py-1.5 px-3 text-sm border border-red-500/30 text-red-400 hover:bg-red-500/10 flex items-center gap-1 font-semibold"
+            >
+              <XCircle size={16}/> Close Complaint
+            </button>
+          )}
         </div>
       </div>
 
