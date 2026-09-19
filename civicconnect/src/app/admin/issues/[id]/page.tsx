@@ -6,7 +6,7 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { Issue, WorkerUser, IssueStatus, UrgencyLevel } from '@/types';
+import { Issue, WorkerUser, IssueStatus, UrgencyLevel, Department } from '@/types';
 import { STATUS_CONFIG, URGENCY_CONFIG, CATEGORY_CONFIG, DEPARTMENTS } from '@/constants';
 import { 
   ArrowLeft, MapPin, Calendar, User, Tag, 
@@ -156,10 +156,10 @@ export default function ComplaintDetailsPage({ params }: { params: Promise<{ id:
   const statusInfo = STATUS_CONFIG[issue.status as keyof typeof STATUS_CONFIG];
   const urgencyInfo = URGENCY_CONFIG[issue.urgency];
   const categoryInfo = CATEGORY_CONFIG[issue.category];
-  const effectiveDepartment = (issue.department === 'other' || !issue.department || !DEPARTMENTS[issue.department as Department]) 
-    ? categoryInfo?.department 
-    : issue.department;
-  const deptInfo = DEPARTMENTS[effectiveDepartment as Department];
+  const effectiveDepartment = ((issue.department as string) === 'other' || !issue.department || !DEPARTMENTS[issue.department as Department]) 
+    ? categoryInfo?.department as Department
+    : issue.department as Department;
+  const deptInfo = DEPARTMENTS[effectiveDepartment];
   
   // Available inspectors (filter by the issue's department, city AND apply priority limits)
   const inspectorsWithWorkload = workers
