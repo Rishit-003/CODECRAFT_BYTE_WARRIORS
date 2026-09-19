@@ -94,13 +94,30 @@ export default function ReportIssuePage() {
           // Generate a Google Maps link for the worker
           const gmapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
           
+          let stateStr = '';
+          let cityStr = '';
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.address) {
+                stateStr = data.address.state || data.address.region || '';
+                cityStr = data.address.city || data.address.town || data.address.village || data.address.county || '';
+              }
+            }
+          } catch (e) {
+            console.error('Reverse geocoding failed', e);
+          }
+
           setForm((prev) => ({
             ...prev,
             latitude: lat,
             longitude: lng,
-            address: prev.address || gmapsLink, // Fallback if no address
+            address: prev.address || gmapsLink,
+            state: stateStr || prev.state,
+            city: cityStr || prev.city,
           }));
-          toast.success('Location captured!');
+          toast.success('Location and details captured!');
         },
         () => toast.error('Could not get location. Please enter address manually.')
       );
@@ -296,9 +313,8 @@ export default function ReportIssuePage() {
             value={form.zone}
             onChange={(e) => setForm((prev) => ({ ...prev, zone: e.target.value }))}
             className="input-field w-full"
-            required
           >
-            <option value="">Select Zone *</option>
+            <option value="">Select Zone (Optional)</option>
             {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
           </select>
           <p className="text-xs text-[var(--color-text-muted)] mt-2">

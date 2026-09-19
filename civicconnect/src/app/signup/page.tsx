@@ -310,35 +310,48 @@ export default function SignupPage() {
                   </div>
                   <div>
                     <label className="input-label">Access Level *</label>
-                    <select value={formData.accessLevel} onChange={(e) => updateForm('accessLevel', e.target.value)} className="input-field" required>
+                    <select 
+                      value={formData.accessLevel} 
+                      onChange={(e) => {
+                        const level = e.target.value;
+                        updateForm('accessLevel', level);
+                        if (level === 'super_admin') {
+                          updateForm('departmentOversight', [] as unknown as string);
+                        }
+                      }} 
+                      className="input-field" 
+                      required
+                    >
                       <option value="department_admin">Department Admin</option>
                       <option value="super_admin">Super Admin</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="input-label">Department Oversight</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {Object.entries(DEPARTMENTS).map(([key, dept]) => (
-                        <label key={key} className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm transition-all" style={{
-                          background: formData.departmentOversight.includes(key as Department) ? 'rgba(59,130,246,0.1)' : 'var(--color-bg-tertiary)',
-                          border: `1px solid ${formData.departmentOversight.includes(key as Department) ? 'rgba(59,130,246,0.3)' : 'var(--color-border-glass)'}`,
-                        }}>
-                          <input
-                            type="checkbox"
-                            checked={formData.departmentOversight.includes(key as Department)}
-                            onChange={(e) => {
-                              const updated = e.target.checked
-                                ? [...formData.departmentOversight, key as Department]
-                                : formData.departmentOversight.filter((d) => d !== key);
-                              updateForm('departmentOversight', updated as unknown as string);
-                            }}
-                            className="rounded"
-                          />
-                          <span>{dept.icon} {dept.label}</span>
-                        </label>
-                      ))}
+                  {formData.accessLevel !== 'super_admin' && (
+                    <div>
+                      <label className="input-label">Department Oversight</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(DEPARTMENTS).map(([key, dept]) => (
+                          <label key={key} className="flex items-center gap-2 p-2 rounded-lg cursor-pointer text-sm transition-all" style={{
+                            background: formData.departmentOversight.includes(key as Department) ? 'rgba(59,130,246,0.1)' : 'var(--color-bg-tertiary)',
+                            border: `1px solid ${formData.departmentOversight.includes(key as Department) ? 'rgba(59,130,246,0.3)' : 'var(--color-border-glass)'}`,
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={formData.departmentOversight.includes(key as Department)}
+                              onChange={(e) => {
+                                const updated = e.target.checked
+                                  ? [...formData.departmentOversight, key as Department]
+                                  : formData.departmentOversight.filter((d) => d !== key);
+                                updateForm('departmentOversight', updated as unknown as string);
+                              }}
+                              className="rounded"
+                            />
+                            <span>{dept.icon} {dept.label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               )}
 

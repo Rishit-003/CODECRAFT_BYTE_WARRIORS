@@ -171,15 +171,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User Section */}
         <div className="p-4" style={{ borderTop: '1px solid var(--color-border-glass)' }}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: `${roleColor}20`, color: roleColor }}>
+          <Link href={`/${user.role}/profile`} className="flex items-center gap-3 mb-3 p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer group">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold group-hover:scale-105 transition-transform" style={{ background: `${roleColor}20`, color: roleColor }}>
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate text-white">{user.name}</p>
+              <p className="text-sm font-medium truncate text-white group-hover:text-[var(--color-accent-blue)] transition-colors">{user.name}</p>
               <p className="text-xs text-[#b8ccc4] truncate">{user.email}</p>
             </div>
-          </div>
+          </Link>
           <button onClick={handleLogout} className="sidebar-link w-full text-[#f0bab4] hover:bg-white/10">
             <LogOut size={18} /> Sign Out
           </button>
@@ -220,7 +220,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </Link>
             <Link 
-              href={user.role === 'admin' ? '/admin' : `/${user.role}/profile`}
+              href={`/${user.role}/profile`}
               className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-transform hover:scale-105 cursor-pointer border border-[var(--color-border-glass)]" 
               style={{ background: `${roleColor}20`, color: roleColor }}
               title={user.role === 'admin' ? "Admin Dashboard" : "Go to Profile"}

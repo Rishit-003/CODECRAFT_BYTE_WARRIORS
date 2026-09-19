@@ -4,12 +4,24 @@
 
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const departments = searchParams.get('departments') || undefined;
+
     const issuesRef = collection(db, 'issues');
-    const querySnapshot = await getDocs(issuesRef);
+    // For analytics, since we are fetching all issues anyway to calculate stats, we can fetch all and filter in memory if departments are provided.
+    // Or we can use the `in` query if provided.
+    let querySnapshot;
+    if (departments) {
+      const q = query(issuesRef, where('department', 'in', departments.split(',')));
+      querySnapshot = await getDocs(q);
+    } else {
+      querySnapshot = await getDocs(issuesRef);
+    }
+    
     const issues = querySnapshot.docs.map(doc => doc.data());
     
     // Default structure matching DashboardAnalytics interface

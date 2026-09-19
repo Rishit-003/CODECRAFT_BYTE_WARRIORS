@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const department = searchParams.get('department') || undefined;
+    const departments = searchParams.get('departments') || undefined;
     const status = searchParams.get('status') || undefined;
     const reportedBy = searchParams.get('reportedBy') || undefined;
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     const constraints: any[] = [];
     
     if (department) constraints.push(where('department', '==', department));
+    if (departments) constraints.push(where('department', 'in', departments.split(',')));
     if (status) constraints.push(where('status', '==', status));
     if (reportedBy) constraints.push(where('reportedBy', '==', reportedBy));
     

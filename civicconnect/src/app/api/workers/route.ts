@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const department = searchParams.get('department') || undefined;
+    const departments = searchParams.get('departments') || undefined;
     const zone = searchParams.get('zone') || undefined;
     const isActive = searchParams.get('isActive');
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     const constraints: any[] = [where('role', '==', 'worker')];
     
     if (department) constraints.push(where('department', '==', department));
+    if (departments) constraints.push(where('department', 'in', departments.split(',')));
     if (zone) constraints.push(where('assignedZone', '==', zone));
     if (isActive !== null) constraints.push(where('isActive', '==', isActive === 'true'));
 

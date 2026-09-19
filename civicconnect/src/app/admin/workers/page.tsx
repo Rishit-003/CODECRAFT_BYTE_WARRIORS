@@ -5,7 +5,8 @@
 // ============================================
 
 import { useEffect, useState } from 'react';
-import { WorkerUser, Department } from '@/types';
+import { useAuth } from '@/lib/auth-context';
+import { WorkerUser, Department, AdminUser } from '@/types';
 import { DEPARTMENTS } from '@/constants';
 import {
   Search, Filter, CheckCircle2, XCircle,
@@ -19,12 +20,20 @@ export default function AdminWorkersPage() {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState<Department | 'all'>('all');
 
+  const { user } = useAuth();
+  const admin = user as AdminUser | null;
+
   useEffect(() => {
-    fetch('/api/workers')
+    let queryStr = '';
+    if (admin && admin.accessLevel === 'department_admin' && admin.departmentOversight?.length > 0) {
+      queryStr = `?departments=${admin.departmentOversight.join(',')}`;
+    }
+
+    fetch(`/api/workers${queryStr}`)
       .then((r) => r.json())
       .then((data) => { setWorkers(data.workers || []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [admin]);
 
   const handleToggleActive = async (worker: WorkerUser) => {
     try {

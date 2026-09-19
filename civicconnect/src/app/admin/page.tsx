@@ -15,7 +15,8 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import Link from 'next/link';
-import { DashboardAnalytics, Issue } from '@/types';
+import { useAuth } from '@/lib/auth-context';
+import { DashboardAnalytics, Issue, AdminUser } from '@/types';
 
 export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
@@ -23,12 +24,20 @@ export default function AdminDashboard() {
   const [actionIssues, setActionIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuth();
+  const admin = user as AdminUser | null;
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        let queryStr = '';
+        if (admin && admin.accessLevel === 'department_admin' && admin.departmentOversight?.length > 0) {
+          queryStr = `?departments=${admin.departmentOversight.join(',')}`;
+        }
+        
         const [analyticsRes, issuesRes] = await Promise.all([
-          fetch('/api/analytics'),
-          fetch('/api/issues')
+          fetch(`/api/analytics${queryStr}`),
+          fetch(`/api/issues${queryStr}`)
         ]);
         
         const analyticsData = await analyticsRes.json();
@@ -53,7 +62,7 @@ export default function AdminDashboard() {
     };
     
     fetchDashboardData();
-  }, []);
+  }, [admin]);
 
   if (loading || !analytics) {
     return (

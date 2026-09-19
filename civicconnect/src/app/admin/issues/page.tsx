@@ -5,7 +5,8 @@
 // ============================================
 
 import { useEffect, useState, useMemo } from 'react';
-import { Issue, IssueStatus, UrgencyLevel, IssueCategory } from '@/types';
+import { useAuth } from '@/lib/auth-context';
+import { Issue, IssueStatus, UrgencyLevel, IssueCategory, AdminUser } from '@/types';
 import { STATUS_CONFIG, URGENCY_CONFIG, CATEGORY_CONFIG } from '@/constants';
 import { Search, Filter, MapPin, Eye } from 'lucide-react';
 import Link from 'next/link';
@@ -21,15 +22,23 @@ export default function AdminIssuesPage() {
   const [priorityFilter, setPriorityFilter] = useState<UrgencyLevel | 'all'>('all');
   const [assignedFilter, setAssignedFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
 
+  const { user } = useAuth();
+  const admin = user as AdminUser | null;
+
   useEffect(() => {
-    fetch('/api/issues')
+    let queryStr = '';
+    if (admin && admin.accessLevel === 'department_admin' && admin.departmentOversight?.length > 0) {
+      queryStr = `?departments=${admin.departmentOversight.join(',')}`;
+    }
+
+    fetch(`/api/issues${queryStr}`)
       .then((r) => r.json())
       .then((data) => {
         setIssues(data.issues || []);
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
+  }, [admin]);
 
   const filtered = useMemo(() => {
     return issues.filter(issue => {
